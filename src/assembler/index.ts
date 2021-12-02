@@ -1,3 +1,16 @@
+/*
+    1- combine the labels tab with the calls tab
+
+    2-check if  the label stays in his 8bit range with the calls in its actuall length
+
+    3- if yes then move on
+
+    4- if no then increase the range of the label and update the tables,jump to stap 2;
+
+    5- if all the labels are satisfied then replace the labels in the machin code with the actual memory addresses
+    
+*/
+
 import Parser from "../parser";
 
 import regMap from "./regMap";
@@ -15,6 +28,8 @@ export class Assembler {
   private offset: number;
   private machineCode: string[];
   private structures: any;
+  private labeles: any;
+  private calls: any;
   static showCode(code: string) {
     let line = "";
     code.split("").forEach((element) => {
@@ -35,6 +50,8 @@ export class Assembler {
     this.offset = 0;
     this.machineCode = [];
     this.structures = {};
+    this.labeles = {};
+    this.calls = {};
   }
   makeLiteral(lit: number, base: number = -100): string {
     let len =
@@ -57,19 +74,39 @@ export class Assembler {
       copy.padStart((len + 1) * this.bitBlock, "0")
     );
   }
-  decode(obj: any) {
+  decode(obj: any): any {
     switch (obj.type) {
       case "binDigit":
       case "decDigit":
       case "hexDigit":
+        return obj.args[0];
+
       case "adrDigit":
-        return this.makeLiteral(obj.args[0]);
+        console.log(obj);
+        return this.decode(obj.args[0]);
+      case "variable":
+        return obj.args[0];
       case "Reg":
         //@ts-ignore
         return regMap[obj.args[0].toUpperCase()];
-
-      default:
+      case "AB":
+        let a = this.decode(obj.a);
+        let b = this.decode(obj.b);
+        switch (obj.op.args[0]) {
+          case "*":
+            return a * b;
+          case "+":
+            return a + b;
+          case "-":
+            return a - b;
+          case "/":
+            throw "still didn't implement the float";
+          default:
+            break;
+        }
         break;
+      default:
+        throw "unknown type: " + obj.type;
     }
   }
   makeInlineData(data: any) {
@@ -88,6 +125,7 @@ export class Assembler {
     }
   }
   makeCode(...codes: string[]) {
+    // console.log(codes);
     codes.forEach((code) => {
       this.offset += code.length;
       this.machineCode.push(code);
@@ -95,7 +133,21 @@ export class Assembler {
   }
   handleArgs(args: any) {
     args
-      .map((arg: any) => this.decode(arg))
+      .map((arg: any) => {
+        if (arg.type == "Reg") return this.decode(arg);
+        if (arg.type == "adrDigit") {
+          let res = this.decode(arg);
+          if (isNaN(res * 1)) {
+            if (!this.calls[res]) this.calls[res] = [];
+            this.calls[res].push(this.offset);
+            this.machineCode.push(res);
+            return "";
+          } else {
+            return this.makeLiteral(this.decode(arg));
+          }
+        }
+        return this.makeLiteral(this.decode(arg));
+      })
       .forEach((d: any) => {
         this.makeCode(d);
       });
@@ -107,7 +159,11 @@ export class Assembler {
       if (line.type) {
         switch (line.type) {
           case "label": {
-            console.log("label: " + line.args[0]);
+            this.machineCode.push("|");
+            let name = line.args[0];
+            if (this.labeles[name]) throw "this label already exist: " + name;
+            this.labeles[name] = this.offset;
+
             break;
           }
           case "comment":
@@ -124,7 +180,6 @@ export class Assembler {
         }
       }
       if (line.inst) {
-        console.log(line);
         this.makeCode(
           //@ts-ignore
           instOpCode[line.inst.toUpperCase()],
@@ -134,6 +189,8 @@ export class Assembler {
         this.handleArgs(line.args);
       }
     });
+    console.log(this.labeles);
+    console.log(this.calls);
     return this.machineCode.join("");
   }
 }

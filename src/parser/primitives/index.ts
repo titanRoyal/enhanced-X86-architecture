@@ -1,6 +1,6 @@
 import * as A from "arcsecond";
 
-import { makeType, ValidName } from "../tools";
+import { disambiguate, makeType, ValidName } from "../tools";
 
 export let varDigit = A.coroutine(function* () {
   yield A.char("!");
@@ -75,7 +75,7 @@ export let brakets: any = A.coroutine(function* () {
     );
   }
   yield A.optionalWhitespace;
-  return makeType("braket", args);
+  return disambiguate(args);
 });
 
 export let nested = A.coroutine(function* () {
@@ -83,6 +83,7 @@ export let nested = A.coroutine(function* () {
   let args = [];
   while (true) {
     yield A.optionalWhitespace;
+    // console.log(args);
     let res = yield A.choice([
       brakets,
       adrDigit,
@@ -108,17 +109,10 @@ export let nested = A.coroutine(function* () {
     if (op == "]") {
       break;
     }
-    let res1 = yield A.choice([
-      brakets,
-      adrDigit,
-      binDigit,
-      decDigit,
-      hexDigit,
-      varDigit,
-    ]);
+
     yield A.optionalWhitespace;
-    args.push(makeType("operation", op), res1);
+    args.push(makeType("operation", op));
   }
   yield A.optionalWhitespace;
-  return makeType("nested", args);
+  return disambiguate(args);
 });
