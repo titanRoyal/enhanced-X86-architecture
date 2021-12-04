@@ -1,16 +1,3 @@
-/*
-    1- combine the labels tab with the calls tab
-
-    2-check if  the label stays in his 8bit range with the calls in its actuall length
-
-    3- if yes then move on
-
-    4- if no then increase the range of the label and update the tables,jump to stap 2;
-
-    5- if all the labels are satisfied then replace the labels in the machin code with the actual memory addresses
-    
-*/
-
 import Parser from "../parser";
 
 import regMap from "./regMap";
@@ -18,6 +5,9 @@ import regMap from "./regMap";
 import instOpCode from "../instMeta/inst";
 
 import instType from "../instMeta/type";
+
+import { label } from "../parser/label";
+import { MakeHeader } from "../instMeta/makeInstruction";
 
 export class Assembler {
   private idBits: number;
@@ -82,7 +72,6 @@ export class Assembler {
         return obj.args[0];
 
       case "adrDigit":
-        console.log(obj);
         return this.decode(obj.args[0]);
       case "variable":
         return obj.args[0];
@@ -125,7 +114,6 @@ export class Assembler {
     }
   }
   makeCode(...codes: string[]) {
-    // console.log(codes);
     codes.forEach((code) => {
       this.offset += code.length;
       this.machineCode.push(code);
@@ -154,12 +142,24 @@ export class Assembler {
   }
   generateBits(input: string) {
     let output = Parser.run(input);
+    let record = {};
+    //@ts-ignore
+    output.result.forEach((line) => {
+      if (line.inst) {
+        //@ts-ignore
+        if (!record[line.inst.toUpperCase()])
+          //@ts-ignore
+          record[line.inst.toUpperCase()] = 0;
+        //@ts-ignore
+        record[line.inst.toUpperCase()]++;
+      }
+    });
+    let dict = MakeHeader(record);
     //@ts-ignore
     output.result.forEach((line) => {
       if (line.type) {
         switch (line.type) {
           case "label": {
-            this.machineCode.push("|");
             let name = line.args[0];
             if (this.labeles[name]) throw "this label already exist: " + name;
             this.labeles[name] = this.offset;
@@ -167,7 +167,6 @@ export class Assembler {
             break;
           }
           case "comment":
-            console.log("comment !!!!");
             break;
           case "inlineData":
             this.makeInlineData(line);
@@ -189,8 +188,56 @@ export class Assembler {
         this.handleArgs(line.args);
       }
     });
-    console.log(this.labeles);
-    console.log(this.calls);
-    return this.machineCode.join("");
+    this.trackLabels();
+    let code = this.machineCode.join("");
+    for (const key in this.labeles) {
+      let res = this.makeAddress(this.labeles[key]);
+      code = code.replace(new RegExp(key, "g"), res);
+    }
+    return code;
+  }
+  getSize(size: number) {
+    return Math.ceil(Math.log(size) / Math.log(2) / this.bitBlock);
+  }
+  trackLabels() {
+    //TODO: calculating the labels size according to the bitBlock size
+    let labelSize = { ...this.labeles };
+    for (const key in labelSize) {
+      labelSize[key] = Math.max(1, this.getSize(labelSize[key]));
+    }
+    //TODO: combine the labels tab with the calls tab
+    let tracker = {};
+    for (const key in this.labeles) {
+      let offset = this.labeles[key];
+      for (const key1 in this.calls) {
+        //@ts-ignore
+        this.calls[key1].forEach((d) => {
+          if (d <= offset) {
+            //@ts-ignore
+            if (!tracker[key]) {
+              //@ts-ignore
+              tracker[key] = {};
+              //@ts-ignore
+              tracker[key][key1] = 0;
+            }
+            //@ts-ignore
+            ++tracker[key][key1];
+          }
+        });
+      }
+    }
+    let test = false;
+    for (const key in this.labeles) {
+      let newSize = this.labeles[key];
+      //@ts-ignore
+      for (const key1 in tracker[key]) {
+        //@ts-ignore
+        newSize += tracker[key][key1] * labelSize[key1] * this.bitBlock;
+        if (this.getSize(newSize) != this.getSize(this.labeles[key]))
+          test = true;
+        this.labeles[key] = newSize;
+      }
+    }
+    if (test) this.trackLabels();
   }
 }
