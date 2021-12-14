@@ -5,7 +5,8 @@ export interface Type {
 
 export interface Inst {
   inst: string;
-  instType: string;
+  alu: number,
+    instType: string;
   group: string;
   args: Type[];
 }

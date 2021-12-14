@@ -1,18 +1,14 @@
-cal &[!first]
 start:
-mov &[((0x1+0x1)-0x1)*0x3],r2
-inc r1
+jmp &[!mid]
+mov 0x1,r1
+mov 0x2,r2
+mid:
+mov 0x99,r2
+cal &[!first]
 hlt
 
-first:
-cal &[!first]
-add r1,r2
-ret
 
-second:
-cal &[!first]
-add r1,r2
-add r1,r2
-add r1,r2
-add r1,r2
+
+first:
+lsh r1,r2
 ret

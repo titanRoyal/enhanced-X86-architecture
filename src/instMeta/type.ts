@@ -45,5 +45,5 @@ export default {
   // FL: "101011",
   M: "1010",
   NA: "1011",
-  max: 6,
+  max: 4,
 };

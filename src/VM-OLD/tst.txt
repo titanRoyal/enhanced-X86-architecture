@@ -1,0 +1,23 @@
+start:
+	mov 0x1000,r1
+	mov 0x0001,r2
+	cal &[!first]
+	mov acc,r1
+	mov acc,r2
+	mov acc,r3
+	mov acc,r4
+	mov acc,r5
+	mov acc,r6
+	mov acc,r7
+	mov acc,r8
+	hlt
+
+first:
+	add r1,r2
+	inc acc
+	inc acc
+	cal &[!second]
+	ret
+second:
+	add 0x1000,acc
+	ret

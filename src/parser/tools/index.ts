@@ -1,5 +1,8 @@
 import * as A from "arcsecond";
-import { Inst, Type } from "../interface";
+import {
+  Inst,
+  Type
+} from "../interface";
 
 export function makeType(type: string, ...args: any): Type {
   return {
@@ -9,17 +12,24 @@ export function makeType(type: string, ...args: any): Type {
 }
 
 export function makeAB(a: any, b: any, op: any) {
-  return { type: "AB", a, b, op };
+  return {
+    type: "AB",
+    a,
+    b,
+    op
+  };
 }
 
 export function makeInstruction(
   inst: string,
+  alu: number,
   instType: string,
   group: string,
   args: any
 ): Inst {
   return {
     inst,
+    alu,
     instType,
     group,
     args,
@@ -32,7 +42,12 @@ export let upperOrLower = (name: string) =>
 
 export function disambiguate(obj: any): any {
   if (obj.length < 2) return obj[0];
-  let stages = { "*": 2, "/": 2, "+": 1, "-": 1 };
+  let stages = {
+    "*": 2,
+    "/": 2,
+    "+": 1,
+    "-": 1
+  };
   let currentStage = -1;
   let currentIndex;
   for (let i = 0; i < obj.length; i++) {
