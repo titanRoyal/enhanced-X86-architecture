@@ -51,6 +51,11 @@ export let MOD = A.choice([
   REG_LIT("MOD", "MOD_REG_LIT", 2),
   LIT_REG("MOD", "MOD_LIT_REG", 2),
 ]);
+
+export let INC = REG("INC", "INC", 2);
+
+export let DEC = REG("DEC", "DEC", 2);
+
 export let LSH = A.choice([
   REG_REG("lsh", "LSH_REG_REG", 1),
   LIT_REG("lsh", "LSH_LIT_REG", 1),
@@ -61,7 +66,6 @@ export let RSH = A.choice([
   LIT_REG("rsh", "RSH_LIT_REG", 1),
   REG_LIT("rsh", "RSH_REG_LIT", 1),
 ]);
-
 export let AND = A.choice([
   REG_REG("and", "AND_REG_REG", 1),
   REG_LIT("and", "AND_REG_LIT", 1),
@@ -70,7 +74,6 @@ export let OR = A.choice([
   REG_REG("or", "OR_REG_REG", 1),
   REG_LIT("or", "OR_REG_LIT", 1),
 ]);
-
 export let XOR = A.choice([
   REG_REG("xor", "XOR_REG_REG", 1),
   REG_LIT("xor", "XOR_REG_LIT", 1),
@@ -80,9 +83,6 @@ export let NOT = A.choice([
   LIT("not", "NOT_LIT", 1)
 ])
 
-export let INC = REG("INC", "INC", 2);
-
-export let DEC = REG("DEC", "DEC", 2);
 
 export let JMP = A.choice([ADR("jmp", "JMP", 5)]);
 

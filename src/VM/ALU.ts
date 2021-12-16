@@ -400,3 +400,166 @@ export let branchALU = function (cpu: any, opcode: string, type: string, args: a
             throw `Unknown  instructioon for branchALU: "${opcode}"`
     }
 }
+export let arethmeticALU = function (cpu: any, opcode: string, type: string, args: any) {
+    switch (opcode) {
+        case "ADD": {
+            switch (type) {
+                case "R_R": {
+                    let r1 = cpu.getRegister(args[0]);
+                    let r2 = cpu.getRegister(args[1]);
+                    cpu.SetRegister("acc", r1 + r2);
+                    break;
+                }
+                case "R_L": {
+                    let r1 = cpu.getRegister(args[0]);
+                    let lit = args[1]
+                    cpu.SetRegister("acc", r1 + lit);
+                    break;
+                }
+                case "L_R": {
+                    let r1 = cpu.getRegister(args[1]);
+                    let lit = args[0]
+                    cpu.SetRegister("acc", r1 + lit);
+                    break;
+                }
+
+                default:
+                    throw `unknown type in (arethmeticALU->${opcode}): "${type}"`
+            }
+            return;
+        }
+        case "MULT": {
+            switch (type) {
+                case "R_R": {
+                    let r1 = cpu.getRegister(args[0]);
+                    let r2 = cpu.getRegister(args[1]);
+                    cpu.SetRegister("acc", r1 * r2);
+                    break;
+                }
+                case "R_L": {
+                    let r1 = cpu.getRegister(args[0]);
+                    let lit = args[1]
+                    cpu.SetRegister("acc", r1 * lit);
+                    break;
+                }
+                case "L_R": {
+                    let r1 = cpu.getRegister(args[1]);
+                    let lit = args[0]
+                    cpu.SetRegister("acc", r1 * lit);
+                    break;
+                }
+
+                default:
+                    throw `unknown type in (arethmeticALU->${opcode}): "${type}"`
+            }
+            return;
+        }
+        case "SUB": {
+            switch (type) {
+                case "R_R": {
+                    let r1 = cpu.getRegister(args[0]);
+                    let r2 = cpu.getRegister(args[1]);
+                    cpu.SetRegister("acc", r1 - r2);
+                    break;
+                }
+                case "R_L": {
+                    let r1 = cpu.getRegister(args[0]);
+                    let lit = args[1]
+                    cpu.SetRegister("acc", r1 - lit);
+                    break;
+                }
+                case "L_R": {
+                    let r1 = cpu.getRegister(args[1]);
+                    let lit = args[0]
+                    cpu.SetRegister("acc", lit - r1);
+                    break;
+                }
+
+                default:
+                    throw `unknown type in (arethmeticALU->${opcode}): "${type}"`
+            }
+            return;
+        }
+        case "DIV": {
+            switch (type) {
+                case "R_R": {
+                    let r1 = cpu.getRegister(args[0]);
+                    let r2 = cpu.getRegister(args[1]);
+                    cpu.SetRegister("acc", Math.floor(r1 / r2));
+                    break;
+                }
+                case "R_L": {
+                    let r1 = cpu.getRegister(args[0]);
+                    let lit = args[1]
+                    cpu.SetRegister("acc", Math.floor(r1 / lit));
+                    break;
+                }
+                case "L_R": {
+                    let r1 = cpu.getRegister(args[1]);
+                    let lit = args[0]
+                    cpu.SetRegister("acc", Math.floor(lit / r1));
+                    break;
+                }
+
+                default:
+                    throw `unknown type in (arethmeticALU->${opcode}): "${type}"`
+            }
+            return;
+        }
+        case "MOD": {
+            switch (type) {
+                case "R_R": {
+                    let r1 = cpu.getRegister(args[0]);
+                    let r2 = cpu.getRegister(args[1]);
+                    cpu.SetRegister("acc", r1 % r2);
+                    break;
+                }
+                case "R_L": {
+                    let r1 = cpu.getRegister(args[0]);
+                    let lit = args[1]
+                    cpu.SetRegister("acc", r1 % lit);
+                    break;
+                }
+                case "L_R": {
+                    let r1 = cpu.getRegister(args[1]);
+                    let lit = args[0]
+                    cpu.SetRegister("acc", lit % r1);
+                    break;
+                }
+
+                default:
+                    throw `unknown type in (arethmeticALU->${opcode}): "${type}"`
+            }
+            return;
+        }
+        case "INC": {
+            switch (type) {
+                case "R": {
+                    let r1 = cpu.getRegister(args[0]);
+                    cpu.SetRegister(args[0], r1 + 1);
+                    break;
+                }
+                default:
+                    throw `unknown type in (arethmeticALU->${opcode}): "${type}"`
+            }
+            return;
+        }
+        case "DEC": {
+            switch (type) {
+                case "R": {
+                    let r1 = cpu.getRegister(args[0]);
+                    cpu.SetRegister(args[0], Math.max(r1 - 1, 0));
+                    break;
+                }
+                default:
+                    throw `unknown type in (arethmeticALU->${opcode}): "${type}"`
+            }
+            return;
+        }
+
+
+
+        default:
+            throw `Unknown  instructioon for branchALU: "${opcode}"`
+    }
+}

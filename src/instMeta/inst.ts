@@ -1,5 +1,4 @@
 export default {
-  MOV: "00000",
   PSH: "00001",
   CAL: "00010",
   ADD: "00011",
@@ -30,6 +29,7 @@ export default {
   INLINEDATA: "11100",
   DIV: "11101",
   MOD: "11110",
-  DIVF: "11111",
+  MOV: "11111",
+  // DIVF: "11111",
   max: 5,
 };

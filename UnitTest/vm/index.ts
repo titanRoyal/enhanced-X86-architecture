@@ -21,10 +21,10 @@ let asm = new Assembler();
 
 let tokens = asm.generateBits(txt);
 
-console.log(tokens)
+logPrograme(tokens);
 
 
-let mem = new Memory(0xffff);
+let mem = new Memory(0xffffff);
 
 
 
@@ -66,3 +66,20 @@ while (true) {
 // console.log(cpu.getRegister("R1", true))
 // console.log(cpu.getRegister("R2"))
 // console.log(cpu.getRegister("R2", true))
+function logPrograme(tokens: string) {
+    let line = ""
+    tokens.trim().split("").forEach((letter, i) => {
+        line += letter;
+        if (line.length == 32 || i == tokens.length - 1) {
+            line = line.padEnd(32, "0");
+            //@ts-ignore
+            let hex = line.match(new RegExp(/.{8}/, "g")).map(d => (("0b" + d) * 1)
+                    .toString(16)
+                    .toUpperCase()
+                    .padStart(2, "0"))
+                .join(" ")
+            console.log(line + " | " + hex);
+            line = "";
+        }
+    })
+}

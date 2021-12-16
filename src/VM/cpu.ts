@@ -7,6 +7,7 @@ import {
     Memory
 } from "./Memory";
 import {
+    arethmeticALU,
     bitwiseALU,
     branchALU,
     fnCalALU,
@@ -43,12 +44,12 @@ export default class CPU {
     }
     push(val: number) {
         let sp = this.getRegister("sp") as number;
-        this.Mapper.setbit32(sp as number, val);
         this.SetRegister("sp", sp - this.MaxLength);
+        this.Mapper.setbit32(sp - this.MaxLength as number, val);
     }
     pushFrame() {
         Object.keys(regMap).forEach((curr, i) => {
-            if (curr == "max") return;
+            if (curr == "max" || curr == "DATA") return;
             this.push(this.getRegister(curr) as number);
         })
         this.SetRegister("fp", this.getRegister("sp") as number);
@@ -56,13 +57,13 @@ export default class CPU {
     popFrame() {
         this.SetRegister("sp", this.getRegister("fp") as number);
         Object.keys(regMap).reverse().forEach((curr, i) => {
-            if (curr == "max") return;
+            if (curr == "max" || curr == "DATA") return;
             this.SetRegister(curr, this.pop() as number)
         })
     }
     pop() {
         let sp = this.getRegister("sp") as number;
-        let res = this.Mapper.getbit32(sp + this.MaxLength)
+        let res = this.Mapper.getbit32(sp)
         this.SetRegister("sp", sp + this.MaxLength);
         return res;
     }
@@ -86,14 +87,50 @@ export default class CPU {
     getHeader() {
         let status = this.getNbit(1);
         if (status) {
-            //TODO: create a virtual table
+            let InstructionSequence = (this.getNbit(8, true) as string).split("").map((data, index) => (data == "1") ? (index + 1) : null).filter(data => data != null);
+            let virtualTable = []
+            while (true) {
+                let inst = this.getNbit(instMap.max, true);
+                //@ts-ignore
+                if (("0b" + inst) * 1 != 0) {
+                    virtualTable.push(inst);
+                } else {
+                    break;
+                }
+            }
+            let vt = this.makeVirtualTable(InstructionSequence, virtualTable);
+            this.VT = vt;
+            //@ts-ignore
+            this.VT.max = Math.max(...Object.keys(this.VT).map(d => d.length))
         } else {
             console.log("NO BIS")
         }
 
     }
+    makeVirtualTable(levels: any, vt: any) {
+        let tab = {}
+        levels.forEach((data: any, index: number) => {
+            let last = (index == levels.length - 1) ? "" : "0"
+            for (let i = 0; i < Math.pow(2, data); i++) {
+                let number = i.toString(2).padStart(data, "0") + last;
+                for (let i1 = 0; i1 < index; i1++) {
+                    number = this.insertStr(number, levels[i1] + i1, "1")
+                }
+                if (vt.length > 0) {
+                    //@ts-ignore
+                    tab[number] = vt.shift();
+                }
+            }
+        })
+        return tab;
+    }
+    insertStr(str: string, pos: number, fill: string) {
+        let upper = str.substr(0, pos)
+        let lower = str.substr(pos);
+        return upper + fill + lower
+    }
     fetchInst() {
-        let opCode = this.getOpCode()
+        let opCode = this.getOpCode();
         let opType = this.getOpType();
         let opArgs = this.getOpArgs(opType);
         let alu = this.getOpALU(opCode)
@@ -110,7 +147,7 @@ export default class CPU {
                 bitwiseALU(this, opcode, type, args);
                 break;
             case 0x2:
-
+                arethmeticALU(this, opcode, type, args);
                 break;
             case 0x3:
                 stackALU(this, opcode, type, args);
@@ -235,21 +272,31 @@ export default class CPU {
     }
     getOpCode(): string {
         if (this.VT) {
-            //TODO: handle the instruction in the BIS
-            throw "virtual table under construction"
-        } else {
-            let instSize = instMap.max;
-            let inst = this.getNbit(instSize, true);
-            let found = "";
-            for (const key in instMap) {
-                //@ts-ignore
-                if (instMap[key] == inst) {
-                    found = key;
+            let code = ""
+            var inst;
+            while (code.length <= this.VT.max) {
+                code += this.getNbit(1);
+                if (code in this.VT) {
+                    inst = this.VT[code];
                     break;
                 }
             }
-            return found;
+            if (!inst) throw "unknown instruction in the VT table " + code;
+        } else {
+            let instSize = instMap.max;
+            //@ts-ignore
+            var inst = this.getNbit(instSize, true);
         }
+        let found = "";
+        for (const key in instMap) {
+            //@ts-ignore
+            if (instMap[key] == inst) {
+                found = key;
+                break;
+            }
+
+        }
+        return found;
     }
     fetchRegister() {
         let regSize = regMap.max;

@@ -1,4 +1,6 @@
 export default [
+    "DATA",
+    "ACC",
     "IP",
     "SP",
     "FP",

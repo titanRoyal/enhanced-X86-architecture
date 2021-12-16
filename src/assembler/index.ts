@@ -23,6 +23,8 @@ export class Assembler {
   private calls: any;
   private variables: any;
   instCounter: number;
+  private inlineData: any;
+  private useLabel: any;
   static showCode(code: string) {
     let line = "";
     code.split("").forEach((element) => {
@@ -47,6 +49,8 @@ export class Assembler {
     this.calls = {};
     this.variables = {};
     this.instCounter = 0;
+    this.inlineData = {};
+    this.useLabel = {};
   }
   makeLiteral(lit: number, base: number = -100): string {
     let len =
@@ -84,7 +88,11 @@ export class Assembler {
       case "adrDigit":
         return this.decode(obj.args[0], label);
       case "variable":
-        if (label) return obj.args[0];
+        if (label) {
+          if (!this.useLabel[obj.args[0]]) this.useLabel[obj.args[0]] = []
+          this.useLabel[obj.args[0]].push(this.offset);
+          return obj.args[0];
+        }
         if (!this.labeles[obj.args[0]] == undefined) return obj.args[0];
         else return this.labeles[obj.args[0]];
       case "Reg":
@@ -111,12 +119,21 @@ export class Assembler {
     }
   }
   makeInlineData(data: any) {
-    let args = data.args[2].map((d: any) =>
-      this.makeLiteral(this.decode(d, false), Number(data.args[0]))
+    this.makeCode(instOpCode.INLINEDATA, instType.NA);
+    // let base = data.args[0] * 1
+    // if (this.inlineData[data.args[1]]) throw "this structure already exists: " + data.args[1];
+    // //@ts-ignore
+    // let res = data.args[2].map(d => Math.min(Math.pow(2, base), this.decode(d)).toString(2).padStart("0", base * 8)).join("")
+    // this.inlineData[data.args[1]]=res;
+    // console.log(res);
+    // this.inlineData[data.args[1]] = 
+
+    data.args[2].map((d: any) =>
+      this.makeCode(this.makeLiteral(this.decode(d, false), Number(data.args[0])))
     );
-    args.forEach((arg: string) => {
-      this.makeCode(arg);
-    });
+    // args.forEach((arg: string) => {
+    //   this.makeCode(arg);
+    // });
   }
   makeDataInterface(line: any) {
     let [name, obj] = line.args;
@@ -134,7 +151,7 @@ export class Assembler {
   handleArgs(args: any) {
     args
       .map((arg: any) => {
-        if (arg.type == "Reg") return this.decode(arg, false);
+        if (arg.type == "Reg") return this.makeCode(this.decode(arg, false));
         if (arg.type == "adrDigit") {
           let res = this.decode(arg, true);
           if (isNaN(res * 1)) {
@@ -147,14 +164,11 @@ export class Assembler {
             // }
             return "";
           } else {
-            return this.makeLiteral(this.decode(arg, false));
+            return this.makeCode(this.makeLiteral(this.decode(arg, false)));
           }
         }
-        return this.makeLiteral(this.decode(arg, false));
+        return this.makeCode(this.makeLiteral(this.decode(arg, false)));
       })
-      .forEach((d: any) => {
-        this.makeCode(d);
-      });
   }
   handleVariables(arg: any) {
     let label = "inst" + this.instCounter + "X"
@@ -216,25 +230,7 @@ export class Assembler {
       }
     });
     this.trackLabels();
-    let adder = {}
-
-    for (const key in this.variables) {
-      let value = this.decode(this.variables[key].arg, false);
-      if (value == NaN) throw "Label Error";
-      let offset = this.variables[key].offset;
-      for (const key1 in this.labeles) {
-        if (offset <= this.labeles[key1]) {
-          //@ts-ignore
-          if (!adder[key1]) adder[key1] = 0;
-          //@ts-ignore
-          adder[key1] += this.getSize(value) * this.bitBlock + this.idBits;
-        }
-      }
-    }
-    for (const key in adder) {
-      //@ts-ignore
-      this.labeles[key] += adder[key];
-    }
+    this.trackOther();
     this.trackLabels();
     let code = this.machineCode.join("");
     for (const key in this.labeles) {
@@ -249,7 +245,7 @@ export class Assembler {
     return code;
   }
   getSize(size: number) {
-    return Math.ceil(Math.log(size) / Math.log(2) / this.bitBlock);
+    return Math.ceil(size.toString(2).length / this.bitBlock);
   }
   trackLabels() {
     //TODO: calculating the labels size according to the bitBlock size
@@ -259,6 +255,8 @@ export class Assembler {
     for (const key in labelSize) {
       labelSize[key] = Math.max(1, this.getSize(labelSize[key]));
     }
+    console.log(this.labeles)
+    console.log(labelSize)
     //TODO: combine the labels tab with the calls tab
     let tracker = {};
     for (const key in this.labeles) {
@@ -287,11 +285,63 @@ export class Assembler {
       for (const key1 in tracker[key]) {
         //@ts-ignore
         newSize += tracker[key][key1] * labelSize[key1] * this.bitBlock;
-        if (this.getSize(newSize) != this.getSize(this.labeles[key]))
+        if (this.getSize(newSize) != this.getSize(this.labeles[key])) {
           test = true;
+        }
         this.labeles[key] = newSize;
       }
     }
     if (test) this.trackLabels();
+  }
+  trackOther() {
+    let adder = {}
+
+    for (const key in this.variables) {
+      let value = this.decode(this.variables[key].arg, false);
+      if (value == NaN) throw "Label Error";
+      let offset = this.variables[key].offset;
+      for (const key1 in this.labeles) {
+        if (offset <= this.labeles[key1]) {
+          //@ts-ignore
+          if (!adder[key1]) adder[key1] = {
+            counter: 0,
+            offset
+          };
+          //@ts-ignore
+          adder[key1].counter += this.getSize(value) * this.bitBlock + this.idBits;
+        }
+      }
+    }
+    for (const key in adder) {
+      let oldSize = this.getSize(this.labeles[key])
+      //@ts-ignore
+      let newSize = this.getSize(this.labeles[key] + adder[key].counter)
+      //@ts-ignore
+      this.labeles[key] += adder[key].counter;
+      if (newSize != oldSize) {
+        let diff = Math.abs(newSize - oldSize);
+        //@ts-ignore
+
+        this.updateLabel(key);
+
+
+      }
+    }
+  }
+  updateLabel(key: string) {
+    //@ts-ignore
+    this.useLabel[key].forEach(d => {
+      for (const key1 in this.labeles) {
+        console.log(key1, this.labeles[key1])
+        if (this.labeles[key1] >= d) {
+          let old = this.labeles[key1]
+          this.labeles[key1] += this.bitBlock;
+          if (this.getSize(old) != this.getSize(old + this.bitBlock)) {
+            this.updateLabel(key1);
+          }
+        }
+        console.log(this.labeles[key1])
+      }
+    })
   }
 }
