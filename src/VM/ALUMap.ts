@@ -51,7 +51,12 @@ export default {
     },
     Interuption: {
         INT: true,
-        RET_INT: true,
+        RTI: true,
         aluNumber: 0x8
+    },
+    IO: {
+        WR: true,
+        WNL: true,
+        aluNumber: 0x9
     },
 }

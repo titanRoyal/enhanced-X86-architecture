@@ -25,6 +25,7 @@ export class Assembler {
   instCounter: number;
   private inlineData: any;
   private useLabel: any;
+  private strTrack: any;
   static showCode(code: string) {
     let line = "";
     code.split("").forEach((element) => {
@@ -51,6 +52,7 @@ export class Assembler {
     this.instCounter = 0;
     this.inlineData = {};
     this.useLabel = {};
+    this.strTrack = {};
   }
   makeLiteral(lit: number, base: number = -100): string {
     let len =
@@ -93,11 +95,15 @@ export class Assembler {
           this.useLabel[obj.args[0]].push(this.offset);
           return obj.args[0];
         }
+        if (obj.args[0] in this.strTrack) return this.strTrack[obj.args[0]];
         if (!this.labeles[obj.args[0]] == undefined) return obj.args[0];
         else return this.labeles[obj.args[0]];
       case "Reg":
+
         //@ts-ignore
         return regMap[obj.args[0].toUpperCase()];
+      case "ascii":
+        return this.strTrack[obj.args[0]];
       case "AB":
         let a = this.decode(obj.a, label);
         let b = this.decode(obj.b, label);
@@ -179,7 +185,20 @@ export class Assembler {
     }
     this.machineCode.push(label)
   }
-  generateBits(input: string) {
+  generateBits(input: string, off = 0, noHeader = false) {
+    //////////////////init //////////////////////
+    this.offset = off;
+    this.machineCode = [];
+    this.structures = {};
+    this.labeles = {};
+    this.calls = {};
+    this.variables = {};
+    this.instCounter = 0;
+    this.inlineData = {};
+    this.useLabel = {};
+    this.strTrack = {};
+
+    //////////////////////////////////
     let output = Parser.run(input);
     let record = {};
     //@ts-ignore
@@ -193,8 +212,8 @@ export class Assembler {
         record[line.inst.toUpperCase()]++;
       }
     });
-    let dict = MakeHeader(record);
-    this.makeCode(dict.header)
+    let dict = MakeHeader(record, noHeader);
+    if (!noHeader) this.makeCode(dict.header);
     //@ts-ignore
     output.result.forEach((line) => {
       if (line.type) {
@@ -215,6 +234,25 @@ export class Assembler {
           case "dataInterface":
             this.makeDataInterface(line);
             break;
+          case "ascii": {
+            this.makeCode(instOpCode.STR, instType.NA);
+            let name = line.args[0]
+            let str = line.args[1].split("")
+            if (this.variables[name] != undefined) throw "sorry this naming already exists: " + name;
+            this.strTrack[name] = this.offset
+            this.variables[name] = {
+              offset: this.offset,
+              arg: line
+            }
+            str.pop();
+            str.shift();
+            //@ts-ignore
+            str.forEach(letter => {
+              this.makeCode(letter.charCodeAt(0).toString(2).padStart(8, "0"))
+            })
+            this.makeCode("0".repeat(8))
+            break;
+          }
           default:
             throw "unknown type: " + line.type;
         }
@@ -242,6 +280,12 @@ export class Assembler {
       if (value == NaN) throw "Label Error1";
       code = code.replace(new RegExp(key, "g"), this.makeAddress(value));
     }
+    // this.strTrack.forEach(d => {
+    //   let index = code.indexOf(d);
+    //   if (index > 0) {
+    //     code = code.replace(new RegExp(key, "g"), this.makeAddress(value));
+    //   }
+    // })
     return code;
   }
   getSize(size: number) {
@@ -255,8 +299,6 @@ export class Assembler {
     for (const key in labelSize) {
       labelSize[key] = Math.max(1, this.getSize(labelSize[key]));
     }
-    console.log(this.labeles)
-    console.log(labelSize)
     //TODO: combine the labels tab with the calls tab
     let tracker = {};
     for (const key in this.labeles) {
@@ -332,7 +374,6 @@ export class Assembler {
     //@ts-ignore
     this.useLabel[key].forEach(d => {
       for (const key1 in this.labeles) {
-        console.log(key1, this.labeles[key1])
         if (this.labeles[key1] >= d) {
           let old = this.labeles[key1]
           this.labeles[key1] += this.bitBlock;
@@ -340,7 +381,6 @@ export class Assembler {
             this.updateLabel(key1);
           }
         }
-        console.log(this.labeles[key1])
       }
     })
   }

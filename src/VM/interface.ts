@@ -1,6 +1,7 @@
 export default interface MemoryInt {
     size: number;
     bits: string;
+    regions: any;
     readAddress(offset: number): string;
 
     readLiteral(offset: number): string;

@@ -11,6 +11,9 @@ import {
 import fs from "fs"
 
 import ps from "prompt-sync"
+import {
+    makeIntVector
+} from "../IntVector";
 
 
 let prompt = ps();
@@ -19,19 +22,32 @@ let txt = fs.readFileSync("../input.asm", "utf-8");
 
 let asm = new Assembler();
 
-let tokens = asm.generateBits(txt);
+// let tokens = asm.generateBits(txt);
 
-logPrograme(tokens);
-
-
+// logPrograme(tokens);
 let mem = new Memory(0xffffff);
+let intVec = makeIntVector(mem);
+let intOffset = mem.alloc(intVec.length);
+mem.injectCode(intOffset, intVec);
+let cpu = new CPU(mem, intOffset);
 
 
+let offset = 0;
+while (true) {
+    let prog = asm.generateBits(txt, offset);
+    let memOffset = mem.alloc(prog.length)
+    let newProg = asm.generateBits(txt, memOffset);
+    if (prog.length == newProg.length) {
+        mem.injectCode(memOffset, newProg)
+        cpu.SetRegister("IP", memOffset);
+        logPrograme(newProg);
+        break;
+    }
+}
 
+// mem.injectCode(0, tokens);
+// mem.injectCode(0x3000, )
 
-mem.injectCode(0, tokens);
-
-let cpu = new CPU(mem);
 
 cpu.getHeader();
 while (true) {
@@ -55,17 +71,42 @@ while (true) {
             console.clear();
             break;
         }
+        case "int": {
+            //@ts-ignore
+            let res1 = prompt("op: ");
+            switch (res1) {
+                case "show":
+                    //@ts-ignore
+                    let res2 = prompt("number: ") * 1;
+                    cpu.checkInteruption(res2)
+                    break;
+                case "add": {
+                    //@ts-ignore
+                    let res2 = prompt("number: ") * 1;
+                    cpu.makeInteruption(res2)
+                    break;
+                }
+                case "remove": {
+                    //@ts-ignore
+                    let res2 = prompt("number: ") * 1;
+                    cpu.removeInteruption(res2)
+                    break;
+                }
+
+                break;
+
+            default:
+                console.log("unknown interaption operation")
+                break;
+            }
+            break;
+        }
         default:
             console.log(`unknown instruction: "${res}"`);
             break;
     }
 }
-// cpu.SetRegister("R1", 10)
-// cpu.SetRegister("R2", (cpu.getRegister("R1") as number) + 20)
-// console.log(cpu.getRegister("R1"))
-// console.log(cpu.getRegister("R1", true))
-// console.log(cpu.getRegister("R2"))
-// console.log(cpu.getRegister("R2", true))
+
 function logPrograme(tokens: string) {
     let line = ""
     tokens.trim().split("").forEach((letter, i) => {

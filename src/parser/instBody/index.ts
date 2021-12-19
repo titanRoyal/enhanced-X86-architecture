@@ -142,10 +142,10 @@ export let RET = NA("ret", "RET", 6);
 export let HLT = NA("hlt", "HLT", 5);
 
 export let WR = A.choice([
-  REG("wr", "WR_REG", 4),
-  ADR("wr", "WR_ADR", 4),
-  LIT("wr", "WR_LIT", 4),
-  STR("wr", "WR_STR", 4),
+  REG("wr", "WR_REG", 9),
+  ADR("wr", "WR_ADR", 9),
+  LIT("wr", "WR_LIT", 9),
+  // STR("wr", "WR_STR", 9),
 ]);
 
-export let WNL = NA("wnl", "WNL", 4);
+export let WNL = NA("wnl", "WNL", 9);

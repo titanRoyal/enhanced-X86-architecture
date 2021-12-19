@@ -11,27 +11,33 @@ import {
     bitwiseALU,
     branchALU,
     fnCalALU,
+    interuptionALU,
+    IOALU,
     movALU,
-    stackALU
+    stackALU,
+    structALU
 } from "./ALU";
 
 export default class CPU {
-    private idBits: number;
-    private MaxLength: number;
-    private bitBlock: number;
-    private adrOffset: number;
-    public Mapper: MemoryInt;
-    public regSize: number;
-    public regOffset: any;
-    public regValue: MemoryInt
-    public VT: any;
-    constructor(mapper: MemoryInt) {
+    idBits: number;
+    MaxLength: number;
+    bitBlock: number;
+    adrOffset: number;
+    Mapper: MemoryInt;
+    regSize: number;
+    regOffset: any;
+    regValue: MemoryInt
+    VT: any;
+    intVector: number;
+    constructor(mapper: MemoryInt, intVector = 0x3000) {
+        console.log("cpu int Vector: " + intVector)
         this.idBits = 3;
         this.bitBlock = 8;
         this.MaxLength = 32;
         this.adrOffset = 5;
         this.Mapper = mapper
         this.regSize = 32;
+        this.intVector = intVector;
         this.regOffset = Object.keys(regMap).reduce((acc, curr, i) => {
             //@ts-ignore
             if (curr != "max") acc[curr] = this.regSize * i;
@@ -41,6 +47,23 @@ export default class CPU {
         this.regValue = new Memory(this.regSize * Object.keys(regMap).length - 1)
         this.VT = null;
         this.SetRegister("sp", this.Mapper.size - this.MaxLength);
+    }
+    makeInteruption(pos: number) {
+        let value = Math.pow(2, pos);
+        let im = this.getRegister("IM") as number;
+        this.SetRegister("IM", im | value);
+    }
+    removeInteruption(pos: number) {
+        //@ts-ignore
+        let value = (("0b" + "1".repeat(this.MaxLength)) * 1) - Math.pow(2, pos);
+        let im = this.getRegister("IM") as number;
+        this.SetRegister("IM", im & value);
+    }
+    checkInteruption(pos: number) {
+        let value = Math.pow(2, pos) as number;
+        //@ts-ignore
+        let res = (this.getRegister("IM") & value) >> pos;
+        return Boolean(res);
     }
     push(val: number) {
         let sp = this.getRegister("sp") as number;
@@ -154,6 +177,7 @@ export default class CPU {
                 break;
             case 0x4:
 
+                structALU(this, opcode, type, args);
                 break;
             case 0x5:
                 branchALU(this, opcode, type, args);
@@ -165,7 +189,10 @@ export default class CPU {
                 movALU(this, opcode, type, args);
                 break;
             case 0x8:
-
+                interuptionALU(this, opcode, type, args);
+                break;
+            case 0x9:
+                IOALU(this, opcode, type, args);
                 break;
 
             default:

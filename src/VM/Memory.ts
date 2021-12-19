@@ -1,11 +1,16 @@
 import MemoryInt from "./interface";
+type region = {
+  offset: number,
+  size: number
+}
 export class Memory implements MemoryInt {
   public size: number;
   public bits: string;
-
+  public regions: region[];
   constructor(size: number) {
     this.size = size;
     this.bits = "0".repeat(size);
+    this.regions = [];
   }
 
   ///////////// read lit/adr ///////////////////////
@@ -99,6 +104,40 @@ export class Memory implements MemoryInt {
     this.replace(offset, value, 64)
   }
   ///////////// Other tools ///////////////////////
+  alloc(size: number): number {
+    let offsets = this.regions.reduce((acc, curr) => {
+      //@ts-ignore
+      acc[curr.offset] = curr.size;
+      return acc
+    }, {})
+
+    for (let i = 0; i < this.size; i++) {
+      if (i in offsets) {
+        //@ts-ignore
+        i += offsets[i] - 1;
+        continue;
+      } else {
+        let end = size + i;
+        let test = true;
+        for (const key in offsets) {
+          //@ts-ignore
+          if (key >= i && key < end) {
+            test = false;
+            break;
+          }
+        }
+        if (test) {
+          this.regions.push({
+            offset: i,
+            size
+          });
+          return i;
+        }
+      }
+    }
+
+    throw `there is no place to place this size "${size}" in Memory`
+  }
   injectCode(offset: number, str: string) {
     let first = this.bits.substring(0, offset);
     let rest = this.bits.substr(offset + str.length);

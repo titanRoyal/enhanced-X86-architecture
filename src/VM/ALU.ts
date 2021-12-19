@@ -563,3 +563,101 @@ export let arethmeticALU = function (cpu: any, opcode: string, type: string, arg
             throw `Unknown  instructioon for branchALU: "${opcode}"`
     }
 }
+export let interuptionALU = function (cpu: any, opcode: string, type: string, args: any) {
+    switch (opcode) {
+        case "INT": {
+            switch (type) {
+                case "L": {
+
+                    let num = args[0];
+                    if (!cpu.checkInteruption(num)) {
+                        console.log("making int")
+                        cpu.makeInteruption(num);
+                        cpu.pushFrame();
+                    }
+                    cpu.SetRegister("IP", cpu.Mapper.getbit32(cpu.intVector + cpu.MaxLength * num));
+                    break;
+                }
+                default:
+                    throw `unknown type in (ineruptionALU->${opcode}): "${type}"`
+            }
+            return;
+        }
+        case "RTI": {
+            cpu.popFrame();
+            break;
+        }
+
+
+        default:
+            throw `Unknown  instructioon for ineruptionALU: "${opcode}"`
+    }
+}
+export let structALU = function (cpu: any, opcode: string, type: string, args: any) {
+    switch (opcode) {
+        case "STR": {
+            switch (type) {
+                case "NA": {
+                    while (true) {
+                        let letter = cpu.getNbit(8);
+                        if (letter == 0) break;
+                    }
+                }
+                break;
+
+            default:
+                throw `unknown type in (structALU->${opcode}): "${type}"`
+            }
+            return;
+        }
+
+
+        default:
+            throw `Unknown  instructioon for structALU: "${opcode}"`
+    }
+}
+export let IOALU = function (cpu: any, opcode: string, type: string, args: any) {
+    switch (opcode) {
+        case "WR": {
+            switch (type) {
+                case "M": {
+                    cpu.push(cpu.getRegister("IP"))
+                    cpu.SetRegister("IP", args[0])
+                    let str = "";
+                    while (true) {
+                        let letter = cpu.getNbit(8);
+                        str += String.fromCharCode(letter);
+                        if (letter == 0) break;
+                    }
+                    console.log(str);
+                    cpu.SetRegister("IP", cpu.pop());
+                    break;
+                }
+                case "R": {
+                    cpu.push(cpu.getRegister("IP"))
+                    cpu.SetRegister("IP", cpu.getRegister(args[0]))
+                    let str = "";
+                    while (true) {
+                        let letter = cpu.getNbit(8);
+                        str += String.fromCharCode(letter);
+                        if (letter == 0) break;
+                    }
+                    console.log(str);
+                    cpu.SetRegister("IP", cpu.pop());
+                    break;
+                }
+
+                default:
+                    throw `unknown type in (IOALU->${opcode}): "${type}"`
+            }
+            return;
+        }
+        case "WNL": {
+            break;
+        }
+
+
+        default:
+            throw `Unknown  instructioon for IOALU: "${opcode}"`
+    }
+}

@@ -88,9 +88,9 @@ export function insertStr(str: string, pos: number, fill: string) {
   return upper + fill + lower;
 }
 
-export function MakeHeader(state: any) {
+export function MakeHeader(state: any, noHeader = false) {
   let [decision, sqn, table, gain] = MakeBinaryInstruction(state, GIS.max);
-  if (!decision) {
+  if (!decision || noHeader) {
     let tablee = {};
     for (const key in state) {
       //@ts-ignore

@@ -31,12 +31,23 @@ import {
   WR,
   WNL,
 } from "./instBody";
-import { label } from "./label";
-import { comment } from "./comment";
-import { dataInterface, inlineData } from "./dataStructure";
+import {
+  label
+} from "./label";
+import {
+  comment
+} from "./comment";
+import {
+  dataInterface,
+  inlineData
+} from "./dataStructure";
+import {
+  ascii
+} from "./string";
 
 export default A.many(
   A.choice([
+    ascii,
     inlineData,
     dataInterface,
     comment,
