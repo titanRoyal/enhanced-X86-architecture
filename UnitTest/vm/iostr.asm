@@ -1,3 +1,2 @@
 wr DATA
-wnl
 rti

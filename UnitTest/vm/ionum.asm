@@ -1,0 +1,2 @@
+wr &[!DATA]
+rti

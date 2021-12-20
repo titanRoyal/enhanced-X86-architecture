@@ -1,5 +1,9 @@
-mov 0x3,R1
+ascii pn="primary Number."
+ascii npn="not primary Number."
+
+mov 0x1f1,R1
 cal &[!perfect]
+hlt
 
 perfect:
 ; set R2 as the counter
@@ -11,21 +15,24 @@ div R1,0x2
 mov ACC,R4
 loopStart:
 inc R2
-mov R2,ACC
-jge R4,&[!loopEnd]
+mov R4,ACC
+jgt R2,&[!loopEnd]
 mod R1,R2
 jeq 0x0,&[!addNum]
 jmp &[!loopStart]
-LoopEnd:
+loopEnd:
 mov R3,ACC
 jeq R1,&[!found]
-mov 0x0,DATA
+mov [!npn],DATA
+int 0x0
 ret
 
 addNum:
 add R2,R3
+mov ACC,R3
 jmp &[!loopStart]
 
 found:
-mov 0x1,DATA
+mov [!pn],DATA
+int 0x0
 ret

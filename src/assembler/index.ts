@@ -240,10 +240,10 @@ export class Assembler {
             let str = line.args[1].split("")
             if (this.variables[name] != undefined) throw "sorry this naming already exists: " + name;
             this.strTrack[name] = this.offset
-            this.variables[name] = {
-              offset: this.offset,
-              arg: line
-            }
+            // this.variables[name] = {
+            //   offset: this.offset,
+            //   arg: line
+            // }
             str.pop();
             str.shift();
             //@ts-ignore

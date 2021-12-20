@@ -82,7 +82,7 @@ export let REG_LIT = function (inst: string, group: string, alu: number) {
     yield A.char(",");
     yield A.optionalWhitespace;
     let litt: any = yield lit;
-    return makeInstruction(inst, alu, "R_L", group, [litt, reg]);
+    return makeInstruction(inst, alu, "R_L", group, [reg, litt]);
   });
   return res;
 };

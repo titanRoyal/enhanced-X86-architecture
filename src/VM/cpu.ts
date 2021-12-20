@@ -29,8 +29,9 @@ export default class CPU {
     regValue: MemoryInt
     VT: any;
     intVector: number;
+    outputStream: string;
     constructor(mapper: MemoryInt, intVector = 0x3000) {
-        console.log("cpu int Vector: " + intVector)
+        // console.log("cpu int Vector: " + intVector)
         this.idBits = 3;
         this.bitBlock = 8;
         this.MaxLength = 32;
@@ -38,6 +39,7 @@ export default class CPU {
         this.Mapper = mapper
         this.regSize = 32;
         this.intVector = intVector;
+        this.outputStream = "";
         this.regOffset = Object.keys(regMap).reduce((acc, curr, i) => {
             //@ts-ignore
             if (curr != "max") acc[curr] = this.regSize * i;
@@ -157,7 +159,7 @@ export default class CPU {
         let opType = this.getOpType();
         let opArgs = this.getOpArgs(opType);
         let alu = this.getOpALU(opCode)
-        console.log(opCode, opType, opArgs);
+        // console.log(opCode, opType, opArgs);
         this.ALUProcess(opCode, opType, opArgs, alu);
     }
     ALUProcess(opcode: string, type: string, args: any, alu: number) {

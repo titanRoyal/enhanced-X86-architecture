@@ -571,7 +571,6 @@ export let interuptionALU = function (cpu: any, opcode: string, type: string, ar
 
                     let num = args[0];
                     if (!cpu.checkInteruption(num)) {
-                        console.log("making int")
                         cpu.makeInteruption(num);
                         cpu.pushFrame();
                     }
@@ -629,11 +628,14 @@ export let IOALU = function (cpu: any, opcode: string, type: string, args: any) 
                         str += String.fromCharCode(letter);
                         if (letter == 0) break;
                     }
-                    console.log(str);
+                    cpu.outputStream += str;
+                    console.log(cpu.outputStream)
                     cpu.SetRegister("IP", cpu.pop());
                     break;
                 }
                 case "R": {
+                    // cpu.outputStream += String(cpu.getRegister(args[0]));
+                    // console.log(cpu.outputStream)
                     cpu.push(cpu.getRegister("IP"))
                     cpu.SetRegister("IP", cpu.getRegister(args[0]))
                     let str = "";
@@ -642,7 +644,8 @@ export let IOALU = function (cpu: any, opcode: string, type: string, args: any) 
                         str += String.fromCharCode(letter);
                         if (letter == 0) break;
                     }
-                    console.log(str);
+                    cpu.outputStream += str
+                    console.log(cpu.outputStream)
                     cpu.SetRegister("IP", cpu.pop());
                     break;
                 }
@@ -653,6 +656,7 @@ export let IOALU = function (cpu: any, opcode: string, type: string, args: any) 
             return;
         }
         case "WNL": {
+            cpu.outputStream += "\n";
             break;
         }
 

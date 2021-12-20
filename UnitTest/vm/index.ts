@@ -14,11 +14,21 @@ import ps from "prompt-sync"
 import {
     makeIntVector
 } from "../IntVector";
+import * as path from "path"
 
 
 let prompt = ps();
-
-let txt = fs.readFileSync("../input.asm", "utf-8");
+let root = process.argv[2];
+if (!root) {
+    console.log("please specify a target file.")
+    process.exit;
+}
+root = path.join(__dirname, root);
+if (!fs.existsSync(root)) {
+    console.log("file does not exist: " + root);
+    process.exit();
+}
+let txt = fs.readFileSync(root, "utf-8");
 
 let asm = new Assembler();
 
@@ -26,10 +36,8 @@ let asm = new Assembler();
 
 // logPrograme(tokens);
 let mem = new Memory(0xffffff);
-let intVec = makeIntVector(mem);
-let intOffset = mem.alloc(intVec.length);
-mem.injectCode(intOffset, intVec);
-let cpu = new CPU(mem, intOffset);
+let cpu = new CPU(mem);
+
 
 
 let offset = 0;
@@ -37,32 +45,47 @@ while (true) {
     let prog = asm.generateBits(txt, offset);
     let memOffset = mem.alloc(prog.length)
     let newProg = asm.generateBits(txt, memOffset);
+    // console.log(prog.length, offset, newProg.length, memOffset)
     if (prog.length == newProg.length) {
         mem.injectCode(memOffset, newProg)
         cpu.SetRegister("IP", memOffset);
         logPrograme(newProg);
         break;
-    }
+    } else offset = memOffset;
 }
-
+let intVec = makeIntVector(mem);
+let intOffset = mem.alloc(intVec.length);
+mem.injectCode(intOffset, intVec);
+cpu.intVector = intOffset;
 // mem.injectCode(0, tokens);
 // mem.injectCode(0x3000, )
 
 
 cpu.getHeader();
 while (true) {
-    let res = prompt(">> ");
+    let res = prompt(">> ").trim();
     switch (res.toLowerCase()) {
         case "":
         case "fetch": {
             cpu.fetchInst()
-            cpu.showRegs();
+            // cpu.showRegs()
             break;
+        }
+        case "exec": {
+            try {
+                while (true) {
+                    cpu.fetchInst();
+                }
+            } catch (error) {
+                console.log(error)
+                process.exit();
+            }
         }
         case "show reg":
             cpu.showRegs();
             break;
         case "exit": {
+            console.log("");
             console.log("All right reserved, peace")
             process.exit();
         }
@@ -119,6 +142,13 @@ function logPrograme(tokens: string) {
                     .toUpperCase()
                     .padStart(2, "0"))
                 .join(" ")
+            //@ts-ignore
+            // let letter = line.match(new RegExp(/.{8}/, "g")).map(d => {
+            //     //@ts-ignore
+            //     let res = (("0b" + d) * 1);
+            //     if (res > 255) return "."
+            //     else return String.fromCharCode(res);
+            // })
             console.log(line + " | " + hex);
             line = "";
         }
