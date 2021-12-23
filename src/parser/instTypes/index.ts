@@ -24,6 +24,7 @@ let lit = A.coroutine(function* () {
   let num = yield A.choice([nested, binDigit, decDigit, hexDigit]);
   //@ts-ignore
   // if (type) num.categorie = type.toUpperCase();
+  if (num.type == "variable") return num;
   //@ts-ignore
   num.args[0] *= ((sign) ? -1 : 1);
   return num;

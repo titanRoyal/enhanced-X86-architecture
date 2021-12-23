@@ -56,6 +56,7 @@ export default class CPU {
         this.flagValue = new Memory(this.maxFlagLength * Object.keys(regMap).length - 1)
         this.VT = null;
         this.SetRegister("sp", this.Mapper.size - this.MaxLength);
+        this.SetRegister("IM", Math.pow(2, this.regSize) - 2)
     }
     makeInteruption(pos: number) {
         let value = Math.pow(2, pos);
@@ -105,7 +106,7 @@ export default class CPU {
         if (isString) {
             return this.regValue.getNbit(this.regOffset[regName] * this.regSize, this.regSize, isString);
         }
-        let val = this.regValue.getNbit(this.regOffset[regName] * this.regSize, this.regSize) as number;
+        let val = this.regValue.getNbit(this.regOffset[regName] * this.regSize, this.regSize, true) as number;
         let FF = this.getFlag(regName, false, "FF");
         let SF = this.getFlag(regName, false, "SF");
         if (FF) {
@@ -113,7 +114,7 @@ export default class CPU {
         } else if (SF) {
             return Signed.decodeRegisterSigned(val);
         }
-        return val;
+        return Number("0b" + val);
     }
     getFlag(regName: string, isString = false, flagName ? : string) {
         regName = regName.toUpperCase();
@@ -147,10 +148,10 @@ export default class CPU {
 
         }
         this.regValue.setNbit(this.regOffset[regName] * this.regSize, val, this.regSize);
-        this.handleFlags(regName, regValue);
+        this.handleFlags(regName, regValue, this.getRegister(regName, true) as string);
     }
-    handleFlags(regName: string, regValue: number) {
-        let pair = (regValue.toString(2).split("").filter(d => d == "1").length % 2 + ((regValue < 0) ? 1 : 0) == 0) ? "1" : "0"
+    handleFlags(regName: string, regValue: number, regrep: string) {
+        let pair = (regrep.split("").filter(d => d == "1").length % 2 == 0) ? "1" : "0"
         let float = (regValue == Math.floor(regValue)) ? "0" : "1"
         let sign;
         if (float == "1") sign = "0";
@@ -216,10 +217,9 @@ export default class CPU {
         let opType = this.getOpType();
         let opArgs = this.getOpArgs(opType);
         opType = opType.split("_").map(d => {
-            if (d.length == 1) return d;
+            if (d.length == 1 || d == "NA") return d;
             return d[1];
         }).join("_")
-        console.log(opType)
         let alu = this.getOpALU(opCode)
         console.log(opCode, opType, opArgs);
         this.ALUProcess(opCode, opType, opArgs, alu);
@@ -299,6 +299,18 @@ export default class CPU {
                 args.push(arg1, arg2)
                 break;
             }
+            case "R_SL": {
+                let arg1 = this.fetchRegister()
+                let arg2 = this.fetchLiteral("S");
+                args.push(arg1, arg2)
+                break;
+            }
+            case "R_FL": {
+                let arg1 = this.fetchRegister()
+                let arg2 = this.fetchLiteral("F");
+                args.push(arg1, arg2)
+                break;
+            }
             case "R_R": {
                 let arg1 = this.fetchRegister()
                 let arg2 = this.fetchRegister();
@@ -323,6 +335,18 @@ export default class CPU {
                 args.push(arg1, arg2)
                 break;
             }
+            case "SL_M": {
+                let arg1 = this.fetchLiteral("S");
+                let arg2 = this.fetchAddress();
+                args.push(arg1, arg2)
+                break;
+            }
+            case "FL_M": {
+                let arg1 = this.fetchLiteral("F");
+                let arg2 = this.fetchAddress();
+                args.push(arg1, arg2)
+                break;
+            }
             case "R_P_R": {
                 let arg1 = this.fetchRegister()
                 let arg2 = this.fetchAddress();
@@ -343,6 +367,16 @@ export default class CPU {
             }
             case "L": {
                 let arg1 = this.fetchLiteral();
+                args.push(arg1)
+                break;
+            }
+            case "SL": {
+                let arg1 = this.fetchLiteral("S");
+                args.push(arg1)
+                break;
+            }
+            case "FL": {
+                let arg1 = this.fetchLiteral("F");
                 args.push(arg1)
                 break;
             }
@@ -417,8 +451,8 @@ export default class CPU {
     fetchLiteral(type = "NA", isString = false): number | string {
         let size = (this.getNbit(this.idBits) as number) + 1;
         if (isString || type == "NA") return this.getNbit(size * this.bitBlock, isString);
-        if (type == "F") return Float.decodeMemoryFloat(this.getNbit(size * this.bitBlock, isString) as number);
-        if (type == "S") return Signed.decodeMemorySigned(this.getNbit(size * this.bitBlock, isString) as number);
+        if (type == "F") return Float.decodeMemoryFloat(this.getNbit(size * this.bitBlock, true) as number);
+        if (type == "S") return Signed.decodeMemorySigned(this.getNbit(size * this.bitBlock, true) as number);
         throw "can't handle this literal";
     }
     fetchAddress(isString = false) {

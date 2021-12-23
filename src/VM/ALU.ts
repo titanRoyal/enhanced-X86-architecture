@@ -489,19 +489,19 @@ export let arethmeticALU = function (cpu: any, opcode: string, type: string, arg
                 case "R_R": {
                     let r1 = cpu.getRegister(args[0]);
                     let r2 = cpu.getRegister(args[1]);
-                    cpu.SetRegister("acc", Math.floor(r1 / r2));
+                    cpu.SetRegister("acc", r1 / r2);
                     break;
                 }
                 case "R_L": {
                     let r1 = cpu.getRegister(args[0]);
                     let lit = args[1]
-                    cpu.SetRegister("acc", Math.floor(r1 / lit));
+                    cpu.SetRegister("acc", r1 / lit);
                     break;
                 }
                 case "L_R": {
                     let r1 = cpu.getRegister(args[1]);
                     let lit = args[0]
-                    cpu.SetRegister("acc", Math.floor(lit / r1));
+                    cpu.SetRegister("acc", lit / r1);
                     break;
                 }
 
@@ -574,10 +574,12 @@ export let interuptionALU = function (cpu: any, opcode: string, type: string, ar
                 case "L": {
 
                     let num = args[0];
-                    if (!cpu.checkInteruption(num)) {
-                        cpu.makeInteruption(num);
-                        cpu.pushFrame();
-                    }
+                    let state = cpu.checkInteruption(num);
+                    if (!state) return;
+                    // if (!cpu.checkInteruption(num)) {
+                    cpu.makeInteruption(num);
+                    cpu.pushFrame();
+                    // }
                     cpu.SetRegister("IP", cpu.Mapper.getbit32(cpu.intVector + cpu.MaxLength * num));
                     break;
                 }

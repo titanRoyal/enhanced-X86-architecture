@@ -58,9 +58,11 @@ export class Assembler {
   }
   makeLiteral(lit: number, base: number = -100): string {
     if (lit != Math.floor(lit)) {
-      return Float.makeMemoryFloat(lit);
+      let res = Float.makeMemoryFloat(lit);
+      return res;
     } else if (lit < 0) {
-      return Signed.makeMemorySigned(lit);
+      let res = Signed.makeMemorySigned(lit);
+      return res;
     }
     let len =
       Math.ceil(Math.max(lit.toString(2).length, base) / this.bitBlock) - 1;
@@ -156,6 +158,14 @@ export class Assembler {
     }
   }
   makeCode(...codes: string[]) {
+    for (let i = 0; i < codes.length; i++) {
+      const element = codes[i];
+      if (element.includes("NaN")) {
+        console.trace("unkonw number");
+        throw "stop"
+      }
+
+    }
     codes.forEach((code) => {
       this.offset += code.length;
       this.machineCode.push(code);

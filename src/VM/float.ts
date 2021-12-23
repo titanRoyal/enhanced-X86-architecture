@@ -42,7 +42,7 @@ export function decodeMemoryFloat(num: number) {
     //@ts-ignore
     let sign = (num[0] == "0") ? 1 : -1;
     //@ts-ignore
-    let exp = ("0b" + num.substr(1, 8)) * 1 - 127;
+    let exp = Number("0b" + num.substr(1, 8)) - 127;
     //@ts-ignore
     let int = num.substr(9, exp)
     //@ts-ignore
