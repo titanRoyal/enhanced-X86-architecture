@@ -1,7 +1,12 @@
 ascii pn="primary Number."
 ascii npn="not primary Number."
+ascii hello="enter your number:"
 
-mov 0x1f1,R1
+
+mov [!hello],DATA
+int 0x0
+int 0x3
+mov DATA,R1
 cal &[!perfect]
 hlt
 

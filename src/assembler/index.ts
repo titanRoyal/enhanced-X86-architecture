@@ -9,6 +9,8 @@ import instType from "../instMeta/type";
 import {
   MakeHeader
 } from "../instMeta/makeInstruction";
+import * as Float from "../VM/float";
+import * as Signed from "../VM/signed";
 
 export class Assembler {
   private idBits: number;
@@ -55,6 +57,11 @@ export class Assembler {
     this.strTrack = {};
   }
   makeLiteral(lit: number, base: number = -100): string {
+    if (lit != Math.floor(lit)) {
+      return Float.makeMemoryFloat(lit);
+    } else if (lit < 0) {
+      return Signed.makeMemorySigned(lit);
+    }
     let len =
       Math.ceil(Math.max(lit.toString(2).length, base) / this.bitBlock) - 1;
     let copy = lit.toString(2);
@@ -154,9 +161,23 @@ export class Assembler {
       this.machineCode.push(code);
     });
   }
-  handleArgs(args: any) {
+  handleArgs(args: any, type: string) {
+    let newtype = type.split("_")
     args
-      .map((arg: any) => {
+      .map((arg: any, i: number) => {
+        if (arg.type == "Reg") return;
+        if (arg.type == "adrDigit") return;
+        let res = this.decode(arg, false)
+        if (res != Math.floor(res)) {
+          newtype[i] = "F" + newtype[i];
+        } else if (res < 0) {
+          newtype[i] = "S" + newtype[i];
+        }
+      })
+    //@ts-ignore
+    this.makeCode(instType[newtype.join("_")]);
+    args
+      .map((arg: any, i: number) => {
         if (arg.type == "Reg") return this.makeCode(this.decode(arg, false));
         if (arg.type == "adrDigit") {
           let res = this.decode(arg, true);
@@ -173,7 +194,8 @@ export class Assembler {
             return this.makeCode(this.makeLiteral(this.decode(arg, false)));
           }
         }
-        return this.makeCode(this.makeLiteral(this.decode(arg, false)));
+        let res = this.decode(arg, false)
+        return this.makeCode(this.makeLiteral(res));
       })
   }
   handleVariables(arg: any) {
@@ -261,10 +283,8 @@ export class Assembler {
         this.makeCode(
           //@ts-ignore
           dict.table[line.inst.toUpperCase()],
-          //@ts-ignore
-          instType[line.instType]
         );
-        this.handleArgs(line.args);
+        this.handleArgs(line.args, line.instType);
       }
     });
     this.trackLabels();

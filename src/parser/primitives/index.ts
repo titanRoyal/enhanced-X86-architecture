@@ -1,6 +1,10 @@
 import * as A from "arcsecond";
 
-import { disambiguate, makeType, ValidName } from "../tools";
+import {
+  disambiguate,
+  makeType,
+  ValidName
+} from "../tools";
 
 export let varDigit = A.coroutine(function* () {
   yield A.char("!");
@@ -24,11 +28,12 @@ export let binDigit = A.coroutine(function* () {
 });
 
 export let decDigit = A.coroutine(function* () {
-  yield A.str("0c");
+  yield A.str("0d");
   let num: any = yield A.regex(/^[0-9]+/);
+  let rest = yield A.possibly(A.regex(/^\.[0-9]+/))
   yield A.optionalWhitespace;
-  num = Number(num);
-  return makeType("decDigit", num);
+  let final = num + ((rest) ? rest : "");
+  return makeType("decDigit", Number(final));
 });
 
 export let hexDigit = A.coroutine(function* () {

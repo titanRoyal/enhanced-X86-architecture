@@ -75,32 +75,32 @@ export class Memory implements MemoryInt {
     return this.bits.substr(offset, 64)
   }
   ///////////// setters ///////////////////////
-  setNbit(offset: number, value: number, base ? : number) {
+  setNbit(offset: number, value: number | string, base ? : number) {
     if (!base) base = Math.ceil(value.toString(2).length / 8) * 8;
     this.replace(offset, value, base)
   }
-  setbit8(offset: number, value: number) {
+  setbit8(offset: number, value: number | string) {
     this.replace(offset, value, 8)
   }
-  setbit16(offset: number, value: number) {
+  setbit16(offset: number, value: number | string) {
     this.replace(offset, value, 16)
   }
-  setbit24(offset: number, value: number) {
+  setbit24(offset: number, value: number | string) {
     this.replace(offset, value, 24)
   }
-  setbit32(offset: number, value: number) {
+  setbit32(offset: number, value: number | string) {
     this.replace(offset, value, 32)
   }
-  setbit40(offset: number, value: number) {
+  setbit40(offset: number, value: number | string) {
     this.replace(offset, value, 40)
   }
-  setbit48(offset: number, value: number) {
+  setbit48(offset: number, value: number | string) {
     this.replace(offset, value, 48)
   }
-  setbit56(offset: number, value: number) {
+  setbit56(offset: number, value: number | string) {
     this.replace(offset, value, 56)
   }
-  setbit64(offset: number, value: number) {
+  setbit64(offset: number, value: number | string) {
     this.replace(offset, value, 64)
   }
   ///////////// Other tools ///////////////////////
@@ -143,7 +143,7 @@ export class Memory implements MemoryInt {
     let rest = this.bits.substr(offset + str.length);
     this.bits = first + str + rest;
   }
-  replace(offset: number, value: number, base: number) {
+  replace(offset: number, value: number | string, base: number) {
     if (offset >= this.size) throw `sorry offset out of bounds`;
     let str = value.toString(2);
     if ((base + offset) > this.size) throw `sorry can't fit value ${value} represented by ${str} because it exceeds memory size limits`

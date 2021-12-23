@@ -18,7 +18,16 @@ import {
   upperOrLower
 } from "../tools";
 
-let lit = A.choice([nested, binDigit, decDigit, hexDigit]);
+let lit = A.coroutine(function* () {
+  // let type = yield A.possibly(A.choice([upperOrLower("f"), upperOrLower("s")]))
+  let sign = yield A.possibly(A.char("-"));
+  let num = yield A.choice([nested, binDigit, decDigit, hexDigit]);
+  //@ts-ignore
+  // if (type) num.categorie = type.toUpperCase();
+  //@ts-ignore
+  num.args[0] *= ((sign) ? -1 : 1);
+  return num;
+})
 
 export let LIT = function (inst: string, group: string, alu: number) {
   let res: any = A.coroutine(function* () {

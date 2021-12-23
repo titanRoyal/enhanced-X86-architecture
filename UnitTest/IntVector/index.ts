@@ -7,7 +7,7 @@ import {
 } from "../../src/VM/Memory";
 
 let asm = new Assembler();
-let paths = ["./iostr.asm", "./ionum.asm", "./ionewline.asm"]
+let paths = ["./iostr.asm", "./ionum.asm", "./ionewline.asm", "./input.asm"]
 export function makeIntVector(mem: Memory) {
     let intVector: string[] = []
     paths.forEach(path => {

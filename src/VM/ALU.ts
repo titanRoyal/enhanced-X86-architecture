@@ -1,3 +1,7 @@
+import ps from "prompt-sync"
+
+let prompt = ps();
+
 export let movALU = function (cpu: any, opcode: string, type: string, args: any) {
     switch (opcode) {
         case "MOV": {
@@ -629,7 +633,7 @@ export let IOALU = function (cpu: any, opcode: string, type: string, args: any) 
                         if (letter == 0) break;
                     }
                     cpu.outputStream += str;
-                    console.log(cpu.outputStream)
+                    console.log(str)
                     cpu.SetRegister("IP", cpu.pop());
                     break;
                 }
@@ -645,7 +649,7 @@ export let IOALU = function (cpu: any, opcode: string, type: string, args: any) 
                         if (letter == 0) break;
                     }
                     cpu.outputStream += str
-                    console.log(cpu.outputStream)
+                    console.log(str)
                     cpu.SetRegister("IP", cpu.pop());
                     break;
                 }
@@ -657,6 +661,22 @@ export let IOALU = function (cpu: any, opcode: string, type: string, args: any) 
         }
         case "WNL": {
             cpu.outputStream += "\n";
+            break;
+        }
+        case "INP": {
+            switch (type) {
+                case "R": {
+                    while (true) {
+                        //@ts-ignore
+                        let res: number = prompt("");
+                        res *= 1;
+                        if (!isNaN(res)) {
+                            cpu.SetRegister(args[0], res)
+                            break;
+                        }
+                    }
+                }
+            }
             break;
         }
 

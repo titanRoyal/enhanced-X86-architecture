@@ -3,6 +3,7 @@ import regMap from "../assembler/regMap";
 import instMap from "../instMeta/inst"
 import typeMap from "../instMeta/type"
 import aluMap from "./ALUMap"
+import flagMap from "./flagMap"
 import {
     Memory
 } from "./Memory";
@@ -17,6 +18,8 @@ import {
     stackALU,
     structALU
 } from "./ALU";
+import * as Float from "./float";
+import * as Signed from "./signed"
 
 export default class CPU {
     idBits: number;
@@ -27,14 +30,17 @@ export default class CPU {
     regSize: number;
     regOffset: any;
     regValue: MemoryInt
+    flagValue: MemoryInt
     VT: any;
     intVector: number;
     outputStream: string;
+    maxFlagLength: number;
     constructor(mapper: MemoryInt, intVector = 0x3000) {
         // console.log("cpu int Vector: " + intVector)
         this.idBits = 3;
         this.bitBlock = 8;
         this.MaxLength = 32;
+        this.maxFlagLength = Object.keys(flagMap).length;
         this.adrOffset = 5;
         this.Mapper = mapper
         this.regSize = 32;
@@ -42,11 +48,12 @@ export default class CPU {
         this.outputStream = "";
         this.regOffset = Object.keys(regMap).reduce((acc, curr, i) => {
             //@ts-ignore
-            if (curr != "max") acc[curr] = this.regSize * i;
+            if (curr != "max") acc[curr] = i;
             return acc;
 
         }, {})
         this.regValue = new Memory(this.regSize * Object.keys(regMap).length - 1)
+        this.flagValue = new Memory(this.maxFlagLength * Object.keys(regMap).length - 1)
         this.VT = null;
         this.SetRegister("sp", this.Mapper.size - this.MaxLength);
     }
@@ -95,12 +102,62 @@ export default class CPU {
     getRegister(regName: string, isString = false): string | number {
         regName = regName.toUpperCase();
         if (this.regOffset[regName] == undefined) throw `Sorry this register does not exist: "${regName}"`;
-        return this.regValue.getNbit(this.regOffset[regName], this.regSize, isString);
+        if (isString) {
+            return this.regValue.getNbit(this.regOffset[regName] * this.regSize, this.regSize, isString);
+        }
+        let val = this.regValue.getNbit(this.regOffset[regName] * this.regSize, this.regSize) as number;
+        let FF = this.getFlag(regName, false, "FF");
+        let SF = this.getFlag(regName, false, "SF");
+        if (FF) {
+            return Float.decodeRegisterFloat(val);
+        } else if (SF) {
+            return Signed.decodeRegisterSigned(val);
+        }
+        return val;
+    }
+    getFlag(regName: string, isString = false, flagName ? : string) {
+        regName = regName.toUpperCase();
+        if (this.regOffset[regName] == undefined) throw `Sorry this register does not exist: "${regName}"`;
+        if (!flagName) {
+            return this.flagValue.getNbit(this.regOffset[regName] * this.maxFlagLength, this.maxFlagLength, isString);
+        } else {
+            flagName = flagName.toUpperCase();
+            //@ts-ignore
+            if (flagMap[flagName] == undefined) throw `Sorry this Flag does not exist: "${flagName}"`;
+            //@ts-ignore
+            return this.flagValue.getNbit(this.regOffset[regName] * this.maxFlagLength + flagMap[flagName], 1, isString);
+        }
+    }
+    SetFlag(regName: string, flagName: string, value: boolean) {
+        if (this.regOffset[regName] == undefined) throw `Sorry this register does not exist: "${regName}"`;
+        //@ts-ignore
+        if (flagMap[flagName] == undefined) throw `Sorry this Flag does not exist: "${flagName}"`;
+        //@ts-ignore
+        this.flagValue.setNbit(this.regOffset[regName] * this.maxFlagLength + flagMap[flagName], (value) ? 1 : 0, 1);
     }
     SetRegister(regName: string, regValue: number) {
+        let val: number | string = regValue;
         regName = regName.toLocaleUpperCase();
         if (this.regOffset[regName] == undefined) throw `Sorry this register does not exist: "${regName}"`;
-        this.regValue.setNbit(this.regOffset[regName], regValue, this.regSize);
+        if (val != Math.floor(val)) {
+            val = Float.makeRegisterFloat(regValue);
+        } else if (val < 0) {
+            //TODO: fix the signed class
+            val = Signed.makeRegisterSigned(regValue);
+
+        }
+        this.regValue.setNbit(this.regOffset[regName] * this.regSize, val, this.regSize);
+        this.handleFlags(regName, regValue);
+    }
+    handleFlags(regName: string, regValue: number) {
+        let pair = (regValue.toString(2).split("").filter(d => d == "1").length % 2 + ((regValue < 0) ? 1 : 0) == 0) ? "1" : "0"
+        let float = (regValue == Math.floor(regValue)) ? "0" : "1"
+        let sign;
+        if (float == "1") sign = "0";
+        else sign = (regValue < 0) ? "1" : "0";
+        let overflow = (regValue >= Math.pow(2, 32)) ? "1" : "0";
+        let value = Number("0b" + pair + float + sign + overflow)
+        this.flagValue.setNbit(this.regOffset[regName] * this.maxFlagLength, value, this.maxFlagLength);
     }
     getNbit(size: number, isString = false) {
         let ip = this.getRegister("IP") as number;
@@ -158,8 +215,13 @@ export default class CPU {
         let opCode = this.getOpCode();
         let opType = this.getOpType();
         let opArgs = this.getOpArgs(opType);
+        opType = opType.split("_").map(d => {
+            if (d.length == 1) return d;
+            return d[1];
+        }).join("_")
+        console.log(opType)
         let alu = this.getOpALU(opCode)
-        // console.log(opCode, opType, opArgs);
+        console.log(opCode, opType, opArgs);
         this.ALUProcess(opCode, opType, opArgs, alu);
     }
     ALUProcess(opcode: string, type: string, args: any, alu: number) {
@@ -215,6 +277,18 @@ export default class CPU {
         switch (optype) {
             case "L_R": {
                 let arg1 = this.fetchLiteral();
+                let arg2 = this.fetchRegister();
+                args.push(arg1, arg2)
+                break;
+            }
+            case "SL_R": {
+                let arg1 = this.fetchLiteral("S");
+                let arg2 = this.fetchRegister();
+                args.push(arg1, arg2)
+                break;
+            }
+            case "FL_R": {
+                let arg1 = this.fetchLiteral("F");
                 let arg2 = this.fetchRegister();
                 args.push(arg1, arg2)
                 break;
@@ -340,12 +414,15 @@ export default class CPU {
         }
         return found;
     }
-    fetchLiteral(isString = false): number | string {
+    fetchLiteral(type = "NA", isString = false): number | string {
         let size = (this.getNbit(this.idBits) as number) + 1;
-        return this.getNbit(size * this.bitBlock, isString);
+        if (isString || type == "NA") return this.getNbit(size * this.bitBlock, isString);
+        if (type == "F") return Float.decodeMemoryFloat(this.getNbit(size * this.bitBlock, isString) as number);
+        if (type == "S") return Signed.decodeMemorySigned(this.getNbit(size * this.bitBlock, isString) as number);
+        throw "can't handle this literal";
     }
     fetchAddress(isString = false) {
-        let res = this.fetchLiteral(true) as string;
+        let res = this.fetchLiteral("NA", true) as string;
         if (isString) return res;
         //@ts-ignore
         let word = ("0b" + res.substr(0, res.length - this.adrOffset)) * 1
@@ -357,13 +434,14 @@ export default class CPU {
         Object.keys(regMap).forEach((curr, i) => {
             if (curr == "max") return;
             let value = this.getRegister(curr, true) as string
+            let flag = this.getFlag(curr, true);
             //@ts-ignore
             let hex = value.match(new RegExp(/.{8}/, "g")).map(d => (("0b" + d) * 1)
                     .toString(16)
                     .toUpperCase()
                     .padStart(2, "0"))
                 .join(" ")
-            console.log(`${curr.padEnd(5," ")}: ${value} | ${hex}`);
+            console.log(`${curr.padEnd(5," ")}: ${value} | ${flag} | ${hex}`);
         }, {})
     }
 }

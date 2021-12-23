@@ -132,6 +132,7 @@ while (true) {
 
 function logPrograme(tokens: string) {
     let line = ""
+    let code = ""
     tokens.trim().split("").forEach((letter, i) => {
         line += letter;
         if (line.length == 32 || i == tokens.length - 1) {
@@ -150,7 +151,9 @@ function logPrograme(tokens: string) {
             //     else return String.fromCharCode(res);
             // })
             console.log(line + " | " + hex);
+            code += line + " | " + hex;
             line = "";
         }
     })
+    fs.writeFileSync("str.txt", code);
 }

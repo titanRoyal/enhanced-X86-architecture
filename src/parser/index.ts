@@ -30,6 +30,7 @@ import {
   HLT,
   WR,
   WNL,
+  INP
 } from "./instBody";
 import {
   label
@@ -80,6 +81,6 @@ export default A.many(
     RET,
     HLT,
     WR,
-    WNL,
+    WNL, INP
   ])
 );

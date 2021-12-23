@@ -1,0 +1,6 @@
+export default {
+    PF: 0x0,
+    FF: 0x1,
+    SF: 0x2,
+    OF: 0x3,
+}

@@ -32,5 +32,6 @@ export default {
   MOV: '011110',
   WNL: '011111',
   RTI: '100000',
+  INP: '100001',
   max: 6
 }
