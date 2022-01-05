@@ -6,9 +6,7 @@ import instOpCode from "../instMeta/inst";
 
 import instType from "../instMeta/type";
 
-import {
-  MakeHeader
-} from "../instMeta/makeInstruction";
+import { MakeHeader } from "../instMeta/makeInstruction";
 import * as Float from "../VM/float";
 import * as Signed from "../VM/signed";
 
@@ -65,11 +63,13 @@ export class Assembler {
       return res;
     }
     let len =
-      Math.ceil(Math.max(lit.toString(2).length, base) / this.bitBlock) - 1;
+      Math.ceil(
+        Math.max(lit.toString(2).length + this.idBits, base) / this.bitBlock
+      ) - 1;
     let copy = lit.toString(2);
     return (
       len.toString(2).padStart(this.idBits, "0") +
-      copy.padStart((len + 1) * this.bitBlock, "0")
+      copy.padStart((len + 1) * this.bitBlock - this.idBits, "0")
     );
   }
   makeRegister(regName: string) {
@@ -78,9 +78,15 @@ export class Assembler {
   }
   makeAddress(adr: number) {
     let word = Math.floor(adr / this.MaxLength).toString(2);
-    let offset = (adr % this.MaxLength).toString(2).padStart(this.adrOffset, "0");
-    let size = Math.ceil((word.length + offset.length) / this.bitBlock)
-    let res = (size - 1).toString(2).padStart(this.idBits, "0") + (word + offset).padStart(size * this.bitBlock, "0")
+    let offset = (adr % this.MaxLength)
+      .toString(2)
+      .padStart(this.adrOffset, "0");
+    let size = Math.ceil(
+      (word.length + offset.length + this.idBits) / this.bitBlock
+    );
+    let res =
+      (size - 1).toString(2).padStart(this.idBits, "0") +
+      (word + offset).padStart(size * this.bitBlock - this.idBits, "0");
     return res;
     // let len = Math.ceil(adr.toString(2).length / this.bitBlock) - 1;
     // let copy = adr.toString(2);
@@ -100,7 +106,7 @@ export class Assembler {
         return this.decode(obj.args[0], label);
       case "variable":
         if (label) {
-          if (!this.useLabel[obj.args[0]]) this.useLabel[obj.args[0]] = []
+          if (!this.useLabel[obj.args[0]]) this.useLabel[obj.args[0]] = [];
           this.useLabel[obj.args[0]].push(this.offset);
           return obj.args[0];
         }
@@ -108,7 +114,6 @@ export class Assembler {
         if (!this.labeles[obj.args[0]] == undefined) return obj.args[0];
         else return this.labeles[obj.args[0]];
       case "Reg":
-
         //@ts-ignore
         return regMap[obj.args[0].toUpperCase()];
       case "ascii":
@@ -141,10 +146,12 @@ export class Assembler {
     // let res = data.args[2].map(d => Math.min(Math.pow(2, base), this.decode(d)).toString(2).padStart("0", base * 8)).join("")
     // this.inlineData[data.args[1]]=res;
     // console.log(res);
-    // this.inlineData[data.args[1]] = 
+    // this.inlineData[data.args[1]] =
 
     data.args[2].map((d: any) =>
-      this.makeCode(this.makeLiteral(this.decode(d, false), Number(data.args[0])))
+      this.makeCode(
+        this.makeLiteral(this.decode(d, false), Number(data.args[0]))
+      )
     );
     // args.forEach((arg: string) => {
     //   this.makeCode(arg);
@@ -154,7 +161,10 @@ export class Assembler {
     let [name, obj] = line.args;
     this.structures[name] = JSON.parse(JSON.stringify(obj));
     for (const key in this.structures[name]) {
-      this.structures[name][key] = this.decode(this.structures[name][key], false);
+      this.structures[name][key] = this.decode(
+        this.structures[name][key],
+        false
+      );
     }
   }
   makeCode(...codes: string[]) {
@@ -162,9 +172,8 @@ export class Assembler {
       const element = codes[i];
       if (element.includes("NaN")) {
         console.trace("unkonw number");
-        throw "stop"
+        throw "stop";
       }
-
     }
     codes.forEach((code) => {
       this.offset += code.length;
@@ -172,50 +181,48 @@ export class Assembler {
     });
   }
   handleArgs(args: any, type: string) {
-    let newtype = type.split("_")
-    args
-      .map((arg: any, i: number) => {
-        if (arg.type == "Reg") return;
-        if (arg.type == "adrDigit") return;
-        let res = this.decode(arg, false)
-        if (res != Math.floor(res)) {
-          newtype[i] = "F" + newtype[i];
-        } else if (res < 0) {
-          newtype[i] = "S" + newtype[i];
-        }
-      })
+    let newtype = type.split("_");
+    args.map((arg: any, i: number) => {
+      if (arg.type == "Reg") return;
+      if (arg.type == "adrDigit") return;
+      let res = this.decode(arg, false);
+      if (res != Math.floor(res)) {
+        newtype[i] = "F" + newtype[i];
+      } else if (res < 0) {
+        newtype[i] = "S" + newtype[i];
+      }
+    });
     //@ts-ignore
     this.makeCode(instType[newtype.join("_")]);
-    args
-      .map((arg: any, i: number) => {
-        if (arg.type == "Reg") return this.makeCode(this.decode(arg, false));
-        if (arg.type == "adrDigit") {
-          let res = this.decode(arg, true);
-          if (isNaN(res * 1)) {
-            // if (arg.args[0].type != "variable") {
-            this.handleVariables(arg.args[0]);
-            // } else {
-            //   if (!this.calls[res]) this.calls[res] = [];
-            //   this.calls[res].push(this.offset);
-            //   this.machineCode.push(res);
-            // }
-            return "";
-          } else {
-            return this.makeCode(this.makeLiteral(this.decode(arg, false)));
-          }
+    args.map((arg: any, i: number) => {
+      if (arg.type == "Reg") return this.makeCode(this.decode(arg, false));
+      if (arg.type == "adrDigit") {
+        let res = this.decode(arg, true);
+        if (isNaN(res * 1)) {
+          // if (arg.args[0].type != "variable") {
+          this.handleVariables(arg.args[0]);
+          // } else {
+          //   if (!this.calls[res]) this.calls[res] = [];
+          //   this.calls[res].push(this.offset);
+          //   this.machineCode.push(res);
+          // }
+          return "";
+        } else {
+          return this.makeCode(this.makeLiteral(this.decode(arg, false)));
         }
-        let res = this.decode(arg, false)
-        return this.makeCode(this.makeLiteral(res));
-      })
+      }
+      let res = this.decode(arg, false);
+      return this.makeCode(this.makeLiteral(res));
+    });
   }
   handleVariables(arg: any) {
-    let label = "inst" + this.instCounter + "X"
-      ++this.instCounter;
+    let label = "inst" + this.instCounter + "X";
+    ++this.instCounter;
     this.variables[label] = {
       offset: this.offset,
-      arg
-    }
-    this.machineCode.push(label)
+      arg,
+    };
+    this.machineCode.push(label);
   }
   generateBits(input: string, off = 0, noHeader = false) {
     //////////////////init //////////////////////
@@ -244,7 +251,10 @@ export class Assembler {
         record[line.inst.toUpperCase()]++;
       }
     });
+    console.log(record, noHeader);
     let dict = MakeHeader(record, noHeader);
+    console.log(dict);
+
     if (!noHeader) this.makeCode(dict.header);
     //@ts-ignore
     output.result.forEach((line) => {
@@ -268,10 +278,11 @@ export class Assembler {
             break;
           case "ascii": {
             this.makeCode(instOpCode.STR, instType.NA);
-            let name = line.args[0]
-            let str = line.args[1].split("")
-            if (this.variables[name] != undefined) throw "sorry this naming already exists: " + name;
-            this.strTrack[name] = this.offset
+            let name = line.args[0];
+            let str = line.args[1].split("");
+            if (this.variables[name] != undefined)
+              throw "sorry this naming already exists: " + name;
+            this.strTrack[name] = this.offset;
             // this.variables[name] = {
             //   offset: this.offset,
             //   arg: line
@@ -279,10 +290,10 @@ export class Assembler {
             str.pop();
             str.shift();
             //@ts-ignore
-            str.forEach(letter => {
-              this.makeCode(letter.charCodeAt(0).toString(2).padStart(8, "0"))
-            })
-            this.makeCode("0".repeat(8))
+            str.forEach((letter) => {
+              this.makeCode(letter.charCodeAt(0).toString(2).padStart(8, "0"));
+            });
+            this.makeCode("0".repeat(8));
             break;
           }
           default:
@@ -292,7 +303,7 @@ export class Assembler {
       if (line.inst) {
         this.makeCode(
           //@ts-ignore
-          dict.table[line.inst.toUpperCase()],
+          dict.table[line.inst.toUpperCase()]
         );
         this.handleArgs(line.args, line.instType);
       }
@@ -319,12 +330,12 @@ export class Assembler {
     return code;
   }
   getSize(size: number) {
-    return Math.ceil(size.toString(2).length / this.bitBlock);
+    return Math.ceil((size.toString(2).length + this.idBits) / this.bitBlock);
   }
   trackLabels() {
     //TODO: calculating the labels size according to the bitBlock size
     let labelSize = {
-      ...this.labeles
+      ...this.labeles,
     };
     for (const key in labelSize) {
       labelSize[key] = Math.max(1, this.getSize(labelSize[key]));
@@ -366,7 +377,7 @@ export class Assembler {
     if (test) this.trackLabels();
   }
   trackOther() {
-    let adder = {}
+    let adder = {};
 
     for (const key in this.variables) {
       let value = this.decode(this.variables[key].arg, false);
@@ -375,19 +386,21 @@ export class Assembler {
       for (const key1 in this.labeles) {
         if (offset <= this.labeles[key1]) {
           //@ts-ignore
-          if (!adder[key1]) adder[key1] = {
-            counter: 0,
-            offset
-          };
+          if (!adder[key1])
+            //@ts-ignore
+            adder[key1] = {
+              counter: 0,
+              offset,
+            };
           //@ts-ignore
-          adder[key1].counter += this.getSize(value) * this.bitBlock + this.idBits;
+          adder[key1].counter += this.getSize(value) * this.bitBlock;
         }
       }
     }
     for (const key in adder) {
-      let oldSize = this.getSize(this.labeles[key])
+      let oldSize = this.getSize(this.labeles[key]);
       //@ts-ignore
-      let newSize = this.getSize(this.labeles[key] + adder[key].counter)
+      let newSize = this.getSize(this.labeles[key] + adder[key].counter);
       //@ts-ignore
       this.labeles[key] += adder[key].counter;
       if (newSize != oldSize) {
@@ -395,23 +408,21 @@ export class Assembler {
         //@ts-ignore
 
         this.updateLabel(key);
-
-
       }
     }
   }
   updateLabel(key: string) {
     //@ts-ignore
-    this.useLabel[key].forEach(d => {
+    this.useLabel[key].forEach((d) => {
       for (const key1 in this.labeles) {
         if (this.labeles[key1] >= d) {
-          let old = this.labeles[key1]
+          let old = this.labeles[key1];
           this.labeles[key1] += this.bitBlock;
           if (this.getSize(old) != this.getSize(old + this.bitBlock)) {
             this.updateLabel(key1);
           }
         }
       }
-    })
+    });
   }
 }

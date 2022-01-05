@@ -9,14 +9,9 @@ import {
   strDigit,
 } from "../primitives";
 
-import {
-  Reg
-} from "../Register";
+import { Reg } from "../Register";
 
-import {
-  makeInstruction,
-  upperOrLower
-} from "../tools";
+import { makeInstruction, upperOrLower } from "../tools";
 
 let lit = A.coroutine(function* () {
   // let type = yield A.possibly(A.choice([upperOrLower("f"), upperOrLower("s")]))
@@ -24,54 +19,102 @@ let lit = A.coroutine(function* () {
   let num = yield A.choice([nested, binDigit, decDigit, hexDigit]);
   //@ts-ignore
   // if (type) num.categorie = type.toUpperCase();
-  if (num.type == "variable") return num;
+  if (num.type == "variable" || num.type == "AB") return num;
   //@ts-ignore
-  num.args[0] *= ((sign) ? -1 : 1);
+  num.args[0] *= sign ? -1 : 1;
   return num;
-})
+});
+
+export let LIT_REG_LIT = (inst: string, group: string, alu: number) => {
+  return A.coroutine(function* () {
+    yield upperOrLower(inst);
+    yield A.optionalWhitespace;
+    let litt = yield lit;
+    yield A.optionalWhitespace;
+    yield A.str(",");
+    yield A.optionalWhitespace;
+    let regg = yield Reg;
+    yield A.optionalWhitespace;
+    yield A.str(",");
+    yield A.optionalWhitespace;
+    let litt1 = yield lit;
+    yield A.optionalWhitespace;
+    return makeInstruction(inst, alu, "L_R_L", group, [litt, regg, litt1]);
+  });
+};
+export let REG_REG_LIT = (inst: string, group: string, alu: number) => {
+  return A.coroutine(function* () {
+    yield upperOrLower(inst);
+    yield A.optionalWhitespace;
+    let reggg = yield Reg;
+    yield A.optionalWhitespace;
+    yield A.str(",");
+    yield A.optionalWhitespace;
+    let regg = yield Reg;
+    yield A.optionalWhitespace;
+    yield A.str(",");
+    yield A.optionalWhitespace;
+    let litt1 = yield lit;
+    yield A.optionalWhitespace;
+    return makeInstruction(inst, alu, "R_R_L", group, [reggg, regg, litt1]);
+  });
+};
+export let REG_LIT_REG = (inst: string, group: string, alu: number) => {
+  return A.coroutine(function* () {
+    yield upperOrLower(inst);
+    yield A.optionalWhitespace;
+    let reg = yield Reg;
+    yield A.optionalWhitespace;
+    yield A.str(",");
+    yield A.optionalWhitespace;
+    let litt = yield lit;
+    yield A.optionalWhitespace;
+    yield A.str(",");
+    yield A.optionalWhitespace;
+    let reg1 = yield Reg;
+    yield A.optionalWhitespace;
+    return makeInstruction(inst, alu, "R_L_R", group, [reg, litt, reg1]);
+  });
+};
 
 export let LIT = function (inst: string, group: string, alu: number) {
-  let res: any = A.coroutine(function* () {
+  return A.coroutine(function* () {
     yield upperOrLower(inst);
     yield A.whitespace;
     let args = yield lit;
     return makeInstruction(inst, alu, "L", group, [args]);
   });
-  return res;
 };
 
 export let REG = function (inst: string, group: string, alu: number) {
-  let res = A.coroutine(function* () {
+  return A.coroutine(function* () {
     yield upperOrLower(inst);
     yield A.whitespace;
     let args: any = yield Reg;
     return makeInstruction(inst, alu, "R", group, [args]);
   });
-  return res;
 };
 
 export let ADR = function (inst: string, group: string, alu: number) {
-  let res = A.coroutine(function* () {
+  return A.coroutine(function* () {
     yield upperOrLower(inst);
     yield A.whitespace;
     let args: any = yield adrDigit;
     return makeInstruction(inst, alu, "M", group, [args]);
   });
-  return res;
 };
 
 export let STR = function (inst: string, group: string, alu: number) {
-  let res = A.coroutine(function* () {
+  return A.coroutine(function* () {
     yield upperOrLower(inst);
     yield A.whitespace;
     let args: any = yield strDigit;
     return makeInstruction(inst, alu, "STR", group, [args]);
   });
-  return res;
 };
 
 export let LIT_REG = function (inst: string, group: string, alu: number) {
-  let res = A.coroutine(function* () {
+  return A.coroutine(function* () {
     yield upperOrLower(inst);
     yield A.whitespace;
     let litt: any = yield lit;
@@ -81,10 +124,9 @@ export let LIT_REG = function (inst: string, group: string, alu: number) {
     let reg: any = yield Reg;
     return makeInstruction(inst, alu, "L_R", group, [litt, reg]);
   });
-  return res;
 };
 export let REG_LIT = function (inst: string, group: string, alu: number) {
-  let res = A.coroutine(function* () {
+  return A.coroutine(function* () {
     yield upperOrLower(inst);
     yield A.whitespace;
     let reg: any = yield Reg;
@@ -94,10 +136,9 @@ export let REG_LIT = function (inst: string, group: string, alu: number) {
     let litt: any = yield lit;
     return makeInstruction(inst, alu, "R_L", group, [reg, litt]);
   });
-  return res;
 };
 export let REG_REG = function (inst: string, group: string, alu: number) {
-  let res = A.coroutine(function* () {
+  return A.coroutine(function* () {
     yield upperOrLower(inst);
     yield A.whitespace;
     let reg: any = yield Reg;
@@ -106,24 +147,6 @@ export let REG_REG = function (inst: string, group: string, alu: number) {
     yield A.optionalWhitespace;
     let reg1 = yield Reg;
     return makeInstruction(inst, alu, "R_R", group, [reg, reg1]);
-  });
-  return res;
-};
-
-export let LIT_REG_REG = (inst: string, group: string, alu: number) => {
-  return A.coroutine(function* () {
-    yield upperOrLower(inst);
-    yield A.optionalWhitespace;
-    let litt = yield lit;
-    yield A.optionalWhitespace;
-    yield A.str(",");
-    yield A.optionalWhitespace;
-    let reg = yield Reg;
-    yield A.optionalWhitespace;
-    yield A.str(",");
-    yield A.optionalWhitespace;
-    let reg1 = yield Reg;
-    return makeInstruction(inst, alu, "L_R_R", group, [litt, reg, reg1]);
   });
 };
 
@@ -166,37 +189,6 @@ export let LIT_MEM = (inst: string, group: string, alu: number) => {
     let MEM = yield adrDigit;
     yield A.optionalWhitespace;
     return makeInstruction(inst, alu, "L_M", group, [litt, MEM]);
-  });
-};
-
-export let REG_PTR_REG = (inst: string, group: string, alu: number) => {
-  return A.coroutine(function* () {
-    yield upperOrLower(inst);
-    yield A.optionalWhitespace;
-    let r1 = yield A.str("&").chain(() => Reg);
-    yield A.optionalWhitespace;
-    yield A.str(",");
-    yield A.optionalWhitespace;
-    let r2 = yield Reg;
-    yield A.optionalWhitespace;
-    return makeInstruction(inst, alu, "R_M_R", group, [r1, r2]);
-  });
-};
-export let LIT_OFF_REG = (inst: string, group: string, alu: number) => {
-  return A.coroutine(function* () {
-    yield upperOrLower(inst);
-    yield A.optionalWhitespace;
-    let litt = yield lit;
-    yield A.optionalWhitespace;
-    yield A.str(",");
-    yield A.optionalWhitespace;
-    let r1 = yield A.str("&").chain(() => Reg);
-    yield A.optionalWhitespace;
-    yield A.str(",");
-    yield A.optionalWhitespace;
-    let r2 = yield Reg;
-    yield A.optionalWhitespace;
-    return makeInstruction(inst, alu, "L_M_R", group, [litt, r1, r2]);
   });
 };
 

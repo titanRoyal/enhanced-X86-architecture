@@ -1,2 +1,2 @@
 inp DATA
-RTI 0x3
+RTI

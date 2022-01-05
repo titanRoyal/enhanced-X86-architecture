@@ -3,7 +3,7 @@ ascii npn="not primary Number."
 ascii hello="enter your number:"
 
 
-mov [!hello],DATA
+mov [!pn],DATA
 int 0x0
 int 0x3
 mov DATA,R1

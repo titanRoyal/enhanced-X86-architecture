@@ -3,9 +3,6 @@ import {
   LIT,
   LIT_REG,
   REG_REG,
-  LIT_REG_REG,
-  LIT_OFF_REG,
-  REG_PTR_REG,
   MEM_REG,
   REG_MEM,
   LIT_MEM,
@@ -13,14 +10,20 @@ import {
   REG,
   ADR,
   NA,
-  STR,
+  REG_REG_LIT,
+  LIT_REG_LIT,
+  REG_LIT_REG,
 } from "../instTypes";
 
 export let MOV = A.choice([
+  //assign to memory variable
+  REG_REG_LIT("mov", "MOV_REG_REG_LIT", 7),
+  LIT_REG_LIT("mov", "MOV_LIT_REG_LIT", 7),
+  //fetch memory variable
+  REG_LIT_REG("mov", "MOV_REG_LIT_REG", 7),
+  //other moves
+  REG_LIT("mov", "MOV_REG_LIT", 7),
   MEM_REG("mov", "MOV_MEM_REG", 7),
-  LIT_REG_REG("mov", "MOV_LIT_REG_REG", 7),
-  REG_PTR_REG("mov", "MOV_REG_PTR_REG", 7),
-  LIT_OFF_REG("mov", "MOV_REG_OFF_REG", 7),
   REG_REG("mov", "MOV_REG_REG", 7),
   LIT_REG("mov", "MOV_LIT_REG", 7),
   REG_MEM("mov", "MOV_REG_MEM", 7),
@@ -78,11 +81,7 @@ export let XOR = A.choice([
   REG_REG("xor", "XOR_REG_REG", 1),
   REG_LIT("xor", "XOR_REG_LIT", 1),
 ]);
-export let NOT = A.choice([
-  REG("not", "NOT_REG", 1),
-  LIT("not", "NOT_LIT", 1)
-])
-
+export let NOT = A.choice([REG("not", "NOT_REG", 1), LIT("not", "NOT_LIT", 1)]);
 
 export let JMP = A.choice([ADR("jmp", "JMP", 5)]);
 
@@ -130,10 +129,7 @@ export let CAL = A.choice([
   ADR("cal", "CAL_LIT", 6),
 ]);
 
-export let INT = A.choice([
-  LIT("int", "INT_LIT", 8),
-  REG("int", "INT_REG", 8)
-]);
+export let INT = A.choice([LIT("int", "INT_LIT", 8), REG("int", "INT_REG", 8)]);
 
 export let RTI = NA("rti", "RET_INT", 8);
 
@@ -147,8 +143,6 @@ export let WR = A.choice([
   LIT("wr", "WR_LIT", 9),
   // STR("wr", "WR_STR", 9),
 ]);
-export let INP = A.choice([
-  REG("INP", "INP_REG", 9),
-]);
+export let INP = A.choice([REG("INP", "INP_REG", 9)]);
 
 export let WNL = NA("wnl", "WNL", 9);

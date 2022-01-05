@@ -1,43 +1,23 @@
-ascii pn="primary Number."
-ascii npn="not primary Number."
-ascii hello="enter your number:"
+;fn addition(int x,int y){
+;    x=x+y
+;   return x;
+;}
 
+addition:
+; init x with 1
+mov 0x1,FP,[0x1]
+; init y with 2
+mov 0x2,FP,[0x2]
 
-mov [!hello],DATA
-int 0x0
-int 0x3
-mov DATA,R1
-cal &[!perfect]
-hlt
+; assign x value to register R1
+mov FP,[0x1],R1
+; assign y value to register R2
+mov FP,[0x2],R2
+;x+y
+add R1,R2
+;x=x+y
+mov ACC,R1
+mov R1,FP,[0x1]
+mov  FP,[0x1],DATA
 
-perfect:
-; set R2 as the counter
-mov 0x1,R2
-; set R3 as the accumulator
-mov 0x1,R3
-; set the Mid point as the R4 register
-div R1,0x2
-mov ACC,R4
-loopStart:
-inc R2
-mov R4,ACC
-jgt R2,&[!loopEnd]
-mod R1,R2
-jeq 0x0,&[!addNum]
-jmp &[!loopStart]
-loopEnd:
-mov R3,ACC
-jeq R1,&[!found]
-mov [!npn],DATA
-int 0x0
-ret
-
-addNum:
-add R2,R3
-mov ACC,R3
-jmp &[!loopStart]
-
-found:
-mov [!pn],DATA
-int 0x0
 ret
