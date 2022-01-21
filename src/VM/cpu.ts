@@ -1,4 +1,3 @@
-import MemoryInt from "./interface";
 import regMap from "../assembler/regMap";
 import instMap from "../instMeta/inst";
 import typeMap from "../instMeta/type";
@@ -81,7 +80,7 @@ export default class CPU {
     this.Mapper.setbit32(sp - this.MaxLength, val);
   }
   pushFrame() {
-    let not = ["MAX", "DATA", "BP"];
+    let not = ["MAX", "DATA"];
     Object.keys(regMap).forEach((curr, i) => {
       if (not.includes(curr.toUpperCase())) return;
       this.push(this.getRegister(curr) as number);
@@ -89,7 +88,7 @@ export default class CPU {
     this.SetRegister("fp", this.getRegister("sp") as number);
   }
   popFrame() {
-    let not = ["MAX", "DATA", "BP"];
+    let not = ["MAX", "DATA"];
     this.SetRegister("sp", this.getRegister("fp") as number);
     Object.keys(regMap)
       .reverse()
@@ -304,7 +303,7 @@ export default class CPU {
         break;
 
       default:
-        throw new Error(`$1`);
+        throw new Error(`unknown ALU: "${alu}"`);
     }
   }
   getOpALU(opCode: string) {
@@ -314,7 +313,7 @@ export default class CPU {
       if (alu[opCode]) return alu.aluNumber;
     }
 
-    throw new Error(`$1`);
+    throw new Error(`unknown ALU for the "${opCode}"`);
   }
   getOpArgs(optype: string) {
     let args = [];

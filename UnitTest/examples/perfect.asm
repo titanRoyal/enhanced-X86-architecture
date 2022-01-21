@@ -1,9 +1,9 @@
-ascii pn="primary Number."
-ascii npn="not primary Number."
+ascii pn="this number is perfect Number."
+ascii npn="this number is not perfect Number."
 ascii hello="enter your number:"
 
 
-mov [!pn],DATA
+mov [!hello],DATA
 int 0x0
 int 0x3
 mov DATA,R1

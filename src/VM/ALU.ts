@@ -47,7 +47,6 @@ export let movALU = function (
             let offset = args[2];
             let reg =
               (cpu.getRegister(args[1]) as number) - offset * cpu.bitBlock;
-            console.log(args, value, offset);
             let sp = cpu.getRegister("sp");
             if (sp > reg) {
               cpu.SetRegister("sp", reg);
@@ -659,7 +658,7 @@ export let structALU = function (
   args: any
 ) {
   switch (opcode) {
-    case "STR": {
+    case "ASCII": {
       switch (type) {
         case "NA":
           {

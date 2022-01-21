@@ -2,4 +2,6 @@ node_modules
 
 .vscode
 
-*.js
+.git
+
+regex.txt
