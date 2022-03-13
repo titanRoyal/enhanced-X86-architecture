@@ -1,0 +1,9 @@
+{
+  "name": "Node ENV",
+  "dockerFile": "../Dockerfile",
+  "appPort": [3000],
+  "postCreateCommand": "npm install"
+  ,"settings": {
+    "terminal.integrated.shell.linux": "/usr/bin/bash"
+  }
+}

@@ -1,3 +1,4 @@
+import { makeMemoryFloat, makeRegisterFloat } from "./float";
 import MemoryInt from "./interface";
 type region = {
   offset: number;
@@ -40,11 +41,16 @@ export class Memory implements MemoryInt {
     return this.bits.substr(offset, 8);
   }
   makeMemoryLiteral(lit: number): string {
-    let body = lit.toString(2);
-    let size = Math.ceil((body.length + 3) / 8);
-    return (
-      (size - 1).toString(2).padStart(3, "0") + body.padStart(size * 8 - 3, "0")
-    );
+    if (lit !== Math.floor(lit)) {
+      var body= makeMemoryFloat(lit);
+    } else {
+      var body = lit.toString(2);
+    }
+      let size = Math.ceil((body.length + 3) / 8);
+      return (
+        (size - 1).toString(2).padStart(3, "0") +
+        body.padStart(size * 8 - 3, "0")
+      );
   }
   getLiteral(offset: number, isString = false) {
     let size = (this.getNbit(offset, 3) as number) + 1;

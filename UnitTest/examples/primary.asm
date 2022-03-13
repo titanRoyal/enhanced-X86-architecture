@@ -1,7 +1,7 @@
 ascii pN="primary number"
 ascii npN="not primary number"
 
-mov 0x9,R1
+mov 0x5,R1
 cal &[!primary]
 hlt
 

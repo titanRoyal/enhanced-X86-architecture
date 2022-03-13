@@ -1,2 +1,2 @@
-wr &[!DATA]
+wrr DATA
 rti

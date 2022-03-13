@@ -33,5 +33,6 @@ export default {
   WNL: "011111",
   RTI: "100000",
   INP: "100001",
+  WRR: "100011",
   max: 6,
 };

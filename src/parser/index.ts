@@ -30,21 +30,13 @@ import {
   HLT,
   WR,
   WNL,
-  INP
+  INP,
+  WRR,
 } from "./instBody";
-import {
-  label
-} from "./label";
-import {
-  comment
-} from "./comment";
-import {
-  dataInterface,
-  inlineData
-} from "./dataStructure";
-import {
-  ascii
-} from "./string";
+import { label } from "./label";
+import { comment } from "./comment";
+import { dataInterface, inlineData } from "./dataStructure";
+import { ascii } from "./string";
 
 export default A.many(
   A.choice([
@@ -81,6 +73,8 @@ export default A.many(
     RET,
     HLT,
     WR,
-    WNL, INP
+    WNL,
+    INP,
+    WRR,
   ])
 );

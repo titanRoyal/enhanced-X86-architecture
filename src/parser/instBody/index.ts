@@ -143,6 +143,7 @@ export let WR = A.choice([
   LIT("wr", "WR_LIT", 9),
   // STR("wr", "WR_STR", 9),
 ]);
+export let WRR = A.choice([REG("wrr", "WRR_REG", 9)]);
 export let INP = A.choice([REG("INP", "INP_REG", 9)]);
 
 export let WNL = NA("wnl", "WNL", 9);

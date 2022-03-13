@@ -56,6 +56,7 @@ export default {
   },
   IO: {
     WR: true,
+    WRR: true,
     WNL: true,
     INP: true,
     aluNumber: 0x9,

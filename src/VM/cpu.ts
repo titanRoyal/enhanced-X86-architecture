@@ -32,6 +32,7 @@ export default class CPU {
   intVector: number;
   outputStream: string;
   maxFlagLength: number;
+  inInteruption: number;
   constructor(mapper: Memory, intVector = 0x3000) {
     // console.log("cpu int Vector: " + intVector)
     this.idBits = 3;
@@ -43,6 +44,7 @@ export default class CPU {
     this.regSize = 32;
     this.intVector = intVector;
     this.outputStream = "";
+    this.inInteruption = 0;
     this.regOffset = Object.keys(regMap).reduce((acc, curr, i) => {
       //@ts-ignore
       if (curr != "max") acc[curr] = i;
@@ -170,6 +172,7 @@ export default class CPU {
       throw new Error(`unknown register: ${regName}`);
     if (val != Math.floor(val)) {
       val = Float.makeRegisterFloat(regValue);
+      console.log(val);
     } else if (val < 0) {
       val = Signed.makeRegisterSigned(regValue);
     }
@@ -467,7 +470,7 @@ export default class CPU {
   }
   getOpCode(): string {
     let inst;
-    if (this.VT) {
+    if (this.VT && !this.inInteruption) {
       let code = "";
       while (code.length <= this.VT.max) {
         code += this.getNbit(1);
